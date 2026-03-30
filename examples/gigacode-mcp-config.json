@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "ConfluenceSections": {
+      "command": "/home/reutov/.gigacode/.venv/bin/python",
+      "args": [
+        "-m",
+        "confluence_section_mcp.server"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/reutov/confluence-section-mcp/src",
+        "CONFLUENCE_SECTION_MODE": "mcp",
+        "CONFLUENCE_UPSTREAM_COMMAND": "/home/reutov/.gigacode/.venv/bin/python",
+        "CONFLUENCE_UPSTREAM_ARGS": "/home/reutov/.gigacode/.venv/bin/mcp-atlassian",
+        "JIRA_URL": "https://",
+        "JIRA_USERNAME": "YOUR_EMAIL",
+        "JIRA_PERSONAL_TOKEN": "YOUR_JIRA_TOKEN",
+        "JIRA_SSL_VERIFY": "false",
+        "CONFLUENCE_URL": "https://",
+        "CONFLUENCE_USERNAME": "YOUR_EMAIL",
+        "CONFLUENCE_PERSONAL_TOKEN": "YOUR_CONFLUENCE_TOKEN",
+        "CONFLUENCE_SSL_VERIFY": "false"
+      },
+      "timeout": 60000,
+      "trust": false
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "confluence-section-mcp"
+version = "0.1.0"
+description = "Section-aware Confluence MCP proxy and parallel editor orchestrator."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+confluence-section-mcp = "confluence_section_mcp.server:main"
+confluence-section-orchestrator = "confluence_section_mcp.orchestrator:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
