@@ -232,6 +232,22 @@ then GigaCode launched the process but closed the pipe before any MCP handshake 
 
 For proxy-level tracing, add `--log-file /absolute/path/proxy-debug.log` to the proxy server args and inspect that file after restart.
 
+If you suspect a protocol-library mismatch, run the runtime diagnostic script on the target machine:
+
+```bash
+python3 tools/diagnose_mcp_runtime.py \
+  "/Users/21356108/.gigacode/extensions/mcp_proxy/confluence-section-mcp" \
+  "/Users/21356108/Library/Application Support/iTerm2/iterm2env-3.10.4/versions/3.10.4/bin/mcp-atlassian"
+```
+
+It prints JSON with:
+
+- Python executable and version
+- `PYTHONPATH` / `VIRTUAL_ENV`
+- availability of `mcp`, `mcp.server.fastmcp`, and `fastmcp`
+- discovered `python` and `mcp-atlassian` executables
+- existence and executability of explicitly passed file paths
+
 ## Parallel editor orchestration
 
 The orchestrator runs one shell command per section. The command receives escaped file paths via placeholders:
