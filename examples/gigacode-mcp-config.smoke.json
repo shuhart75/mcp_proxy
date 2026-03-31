@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ConfluenceSections": {
+      "command": "/Users/21356108/.gigacode/extensions/mcp_proxy/.venv/bin/python3",
+      "args": [
+        "/Users/21356108/.gigacode/extensions/mcp_proxy/tools/mcp_smoke_server.py"
+      ],
+      "timeout": 60000,
+      "trust": false
+    }
+  }
+}

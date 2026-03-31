@@ -196,6 +196,7 @@ Example with hidden upstream Rovo behind this proxy:
 
 Example with your local `mcp-atlassian` install is in [`examples/gigacode-mcp-config.json`](./examples/gigacode-mcp-config.json).
 The preferred no-env variant is in [`examples/gigacode-mcp-config.no-env.json`](./examples/gigacode-mcp-config.no-env.json).
+The MCP handshake smoke-test variant is in [`examples/gigacode-mcp-config.smoke.json`](./examples/gigacode-mcp-config.smoke.json).
 
 Notes for GigaCode config:
 
@@ -203,6 +204,33 @@ Notes for GigaCode config:
 - String env values are safer than JSON booleans for `*_SSL_VERIFY` because many MCP launchers pass env vars as strings.
 - With this setup, only the proxy is registered as an MCP server in GigaCode. The upstream Atlassian server is spawned internally by the proxy.
 - If you are using `mcp-atlassian` rather than Rovo MCP, prefer a file config and set tool names/args explicitly. The sample config already uses `confluence_get_page` / `confluence_update_page`.
+
+## Handshake Debugging
+
+If GigaCode shows `Disconnected` before any real tool calls happen, first test whether it can talk to a minimal MCP server at all.
+
+1. Replace your MCP config with [`examples/gigacode-mcp-config.smoke.json`](./examples/gigacode-mcp-config.smoke.json).
+2. Restart GigaCode fully.
+3. Inspect `/tmp/gigacode-mcp-smoke.log`.
+
+Expected healthy log:
+
+```text
+smoke server started
+method=initialize id=...
+method=tools/list id=...
+```
+
+If the log only shows:
+
+```text
+smoke server started
+stdin closed
+```
+
+then GigaCode launched the process but closed the pipe before any MCP handshake reached the server. In that case the problem is outside the Confluence proxy logic and must be debugged at the GigaCode launcher/config layer.
+
+For proxy-level tracing, add `--log-file /absolute/path/proxy-debug.log` to the proxy server args and inspect that file after restart.
 
 ## Parallel editor orchestration
 
