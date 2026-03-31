@@ -95,7 +95,7 @@ def _read_message(stream: Any) -> dict[str, Any] | None:
         line = stream.readline()
         if not line:
             return None
-        if line == b"\r\n":
+        if not line.strip():
             break
         name, _, value = line.decode("utf-8").partition(":")
         headers[name.strip().lower()] = value.strip()
