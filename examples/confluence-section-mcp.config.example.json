@@ -1,0 +1,31 @@
+{
+  "mode": "mcp",
+  "upstream_mcp": {
+    "command": "/Users/21356108/.gigacode/.venv/bin/python",
+    "args": [
+      "/Users/21356108/.gigacode/.venv/bin/mcp-atlassian"
+    ],
+    "env": {
+      "JIRA_URL": "https://YOUR-JIRA.atlassian.net",
+      "JIRA_USERNAME": "YOUR_EMAIL",
+      "JIRA_PERSONAL_TOKEN": "YOUR_JIRA_TOKEN",
+      "JIRA_SSL_VERIFY": "false",
+      "CONFLUENCE_URL": "https://YOUR-CONFLUENCE.atlassian.net",
+      "CONFLUENCE_USERNAME": "YOUR_EMAIL",
+      "CONFLUENCE_PERSONAL_TOKEN": "YOUR_CONFLUENCE_TOKEN",
+      "CONFLUENCE_SSL_VERIFY": "false"
+    },
+    "get_page_tool": "confluence_get_page",
+    "update_page_tool": "confluence_update_page",
+    "page_id_arg": "page_id",
+    "body_arg": "content",
+    "title_arg": "title",
+    "get_page_extra_args": {
+      "convert_to_markdown": true,
+      "include_metadata": true
+    },
+    "update_page_extra_args": {
+      "content_format": "markdown"
+    }
+  }
+}

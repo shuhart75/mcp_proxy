@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ConfluenceSections": {
+      "command": "/Users/21356108/.gigacode/extensions/mcp_proxy/.venv/bin/confluence-section-mcp",
+      "args": [
+        "--config",
+        "/Users/21356108/.gigacode/extensions/mcp_proxy/confluence-section-mcp.config.json"
+      ],
+      "timeout": 60000,
+      "trust": false
+    }
+  }
+}

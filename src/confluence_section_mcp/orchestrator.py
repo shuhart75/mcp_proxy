@@ -13,7 +13,7 @@ import sys
 from typing import Any
 
 from .adapters import build_adapter
-from .config import AppConfig
+from .config import load_app_config
 from .sectioning import apply_section_replacements, build_layout
 
 
@@ -30,6 +30,7 @@ class WorkItem:
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run parallel section editors and merge the result.")
     parser.add_argument("page_id", help="Confluence page id or local page id in file mode")
+    parser.add_argument("--config", help="Path to JSON config file. If omitted, built-in search paths and env are used.")
     parser.add_argument("--editor-command", required=True, help="Shell command template. Supports {input_file}, {output_file}, {instruction_file}, {section_id}, {label}.")
     parser.add_argument("--instructions", help="Inline instructions for each section editor")
     parser.add_argument("--instructions-file", help="Read editor instructions from this file")
@@ -94,7 +95,7 @@ def _run_item(item: WorkItem) -> dict[str, Any]:
 def run(argv: list[str] | None = None) -> int:
     args = _parse_args(argv or sys.argv[1:])
     instructions = _load_instructions(args)
-    config = AppConfig.from_env()
+    config = load_app_config(args.config)
     adapter = build_adapter(config)
     snapshot = adapter.get_page(args.page_id)
     layout = build_layout(snapshot.body, strategy=args.strategy, max_chars=args.max_chars)

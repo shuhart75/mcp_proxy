@@ -10,6 +10,8 @@ The intended flow is:
 4. Merge the edited sections locally.
 5. Push one final update back to Confluence without asking the LLM to hold the whole page in context.
 
+The preferred deployment mode for GigaCode is now a JSON config file passed via `--config`, because some GigaCode builds do not propagate `mcpServers.env` into the spawned process.
+
 ## What is included
 
 - `confluence-section-mcp`
@@ -46,6 +48,15 @@ python3 -m pip install -e .
 ```
 
 ## Configuration
+
+`confluence-section-mcp` can load configuration from:
+
+1. `--config /absolute/path/config.json`
+2. `./confluence-section-mcp.config.json`
+3. `~/.config/confluence-section-mcp/config.json`
+4. environment variables
+
+For GigaCode, prefer option 1.
 
 ### File mode
 
@@ -122,6 +133,20 @@ What this buys you:
 - The original Rovo/Atlassian tool catalog does not consume model context.
 - Section splitting and final merge happen in this proxy, not in the model.
 
+### GigaCode without `mcpServers.env`
+
+If your GigaCode build does not pass `mcpServers.env` to the MCP process, use a file-based config instead.
+
+1. Copy [`examples/confluence-section-mcp.config.example.json`](./examples/confluence-section-mcp.config.example.json) to `confluence-section-mcp.config.json`.
+2. Fill in real paths and Atlassian credentials.
+3. Point GigaCode to the proxy using [`examples/gigacode-mcp-config.no-env.json`](./examples/gigacode-mcp-config.no-env.json).
+
+In that mode:
+
+- GigaCode only launches `confluence-section-mcp --config /absolute/path/...`.
+- The proxy itself injects the Atlassian env for the hidden upstream `mcp-atlassian`.
+- You do not depend on `mcpServers.env` at all.
+
 ## MCP tools
 
 - `confluence_page_outline`
@@ -170,12 +195,14 @@ Example with hidden upstream Rovo behind this proxy:
 ```
 
 Example with your local `mcp-atlassian` install is in [`examples/gigacode-mcp-config.json`](./examples/gigacode-mcp-config.json).
+The preferred no-env variant is in [`examples/gigacode-mcp-config.no-env.json`](./examples/gigacode-mcp-config.no-env.json).
 
 Notes for GigaCode config:
 
 - Prefer absolute paths over `$HOME` placeholders unless you have confirmed the client expands them.
 - String env values are safer than JSON booleans for `*_SSL_VERIFY` because many MCP launchers pass env vars as strings.
 - With this setup, only the proxy is registered as an MCP server in GigaCode. The upstream Atlassian server is spawned internally by the proxy.
+- If you are using `mcp-atlassian` rather than Rovo MCP, prefer a file config and set tool names/args explicitly. The sample config already uses `confluence_get_page` / `confluence_update_page`.
 
 ## Parallel editor orchestration
 

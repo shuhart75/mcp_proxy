@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 import json
 import logging
@@ -7,7 +8,7 @@ import sys
 from typing import Any
 
 from .adapters import AdapterError, build_adapter
-from .config import AppConfig
+from .config import AppConfig, load_app_config
 from .service import SectionService, format_tool_result
 
 
@@ -112,7 +113,13 @@ def _write_message(stream: Any, message: dict[str, Any]) -> None:
 
 @dataclass
 class ServerState:
-    service: SectionService
+    config: AppConfig
+    service: SectionService | None = None
+
+    def get_service(self) -> SectionService:
+        if self.service is None:
+            self.service = SectionService(build_adapter(self.config))
+        return self.service
 
 
 def _error_response(message_id: Any, code: int, text: str) -> dict[str, Any]:
@@ -145,22 +152,30 @@ def _handle_tool_call(state: ServerState, message_id: Any, params: dict[str, Any
     name = params.get("name")
     arguments = params.get("arguments", {})
     try:
+        service = state.get_service()
         if name == "confluence_page_outline":
-            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(state.service.get_outline(**arguments))}
+            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.get_outline(**arguments))}
         if name == "confluence_page_section":
-            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(state.service.get_section(**arguments))}
+            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.get_section(**arguments))}
         if name == "confluence_replace_section":
-            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(state.service.replace_section(**arguments))}
+            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.replace_section(**arguments))}
         if name == "confluence_apply_sections":
-            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(state.service.apply_sections(**arguments))}
+            return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.apply_sections(**arguments))}
     except (AdapterError, KeyError, ValueError) as exc:
         return {"jsonrpc": "2.0", "id": message_id, "result": {"content": [{"type": "text", "text": str(exc)}], "isError": True}}
     return _error_response(message_id, -32601, f"Unknown tool: {name}")
 
 
-def run() -> int:
-    config = AppConfig.from_env()
-    state = ServerState(service=SectionService(build_adapter(config)))
+def _parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Section-aware Confluence MCP proxy.")
+    parser.add_argument("--config", help="Path to JSON config file. If omitted, built-in search paths and env are used.")
+    return parser.parse_args(argv)
+
+
+def run(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv or sys.argv[1:])
+    config = load_app_config(args.config)
+    state = ServerState(config=config)
     while True:
         message = _read_message(sys.stdin.buffer)
         if message is None:

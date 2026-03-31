@@ -15,6 +15,7 @@ Context:
   - command: /home/reutov/.gigacode/.venv/bin/python
   - args: /home/reutov/.gigacode/.venv/bin/mcp-atlassian
 - The example config is in `examples/gigacode-mcp-config.json`.
+- Prefer the file-based config path using `--config`, because some GigaCode builds do not pass `mcpServers.env` to the spawned process.
 - The main docs are in `README.md`.
 
 What to do:

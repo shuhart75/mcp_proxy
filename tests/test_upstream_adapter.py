@@ -17,12 +17,15 @@ class UpstreamAdapterTests(unittest.TestCase):
             UpstreamMcpConfig(
                 command="python3",
                 args=[str(fake_server)],
+                env={},
                 env_passthrough=[],
                 get_page_tool="getConfluencePage",
                 update_page_tool="updateConfluencePage",
                 page_id_arg="pageId",
                 body_arg="body",
                 title_arg="title",
+                get_page_extra_args={},
+                update_page_extra_args={},
             )
         )
         try:

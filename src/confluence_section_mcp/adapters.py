@@ -190,8 +190,10 @@ class ConfluenceRestAdapter(PageAdapter):
 class StdioMcpClient:
     def __init__(self, config: UpstreamMcpConfig) -> None:
         env = os.environ.copy()
+        env.update(config.env)
         if config.env_passthrough:
-            env = {key: value for key, value in env.items() if key in set(config.env_passthrough) or key in {"PATH", "HOME", "USER", "SHELL"}}
+            allowed = set(config.env_passthrough) | set(config.env) | {"PATH", "HOME", "USER", "SHELL"}
+            env = {key: value for key, value in env.items() if key in allowed}
         self.process = subprocess.Popen(
             [config.command, *config.args],
             stdin=subprocess.PIPE,
@@ -283,13 +285,15 @@ class UpstreamMcpPageAdapter(PageAdapter):
         self.client.close()
 
     def get_page(self, page_id: str) -> PageSnapshot:
+        arguments: dict[str, Any] = {
+            self.config.page_id_arg: page_id,
+            **self.config.get_page_extra_args,
+        }
         payload = self.client.call(
             "tools/call",
             {
                 "name": self.config.get_page_tool,
-                "arguments": {
-                    self.config.page_id_arg: page_id,
-                },
+                "arguments": arguments,
             },
         )
         parsed = _parse_upstream_page(payload)
@@ -312,6 +316,7 @@ class UpstreamMcpPageAdapter(PageAdapter):
         space_id: str | None = None,
     ) -> PageSnapshot:
         arguments: dict[str, Any] = {
+            **self.config.update_page_extra_args,
             self.config.page_id_arg: page_id,
             self.config.body_arg: body,
         }
