@@ -248,10 +248,16 @@ It prints JSON with:
 - discovered `python` and `mcp-atlassian` executables
 - existence and executability of explicitly passed file paths
 
-For the specific macOS paths used in this debugging thread, there is also a ready-made wrapper:
+For a real GigaCode installation, prefer the config-driven diagnostic script. It reads `settings.json`, finds `mcpServers.ConfluenceSections`, follows `--config`, and probes the actual Python interpreters configured there.
 
 ```bash
-bash tools/run_target_diagnostic.sh
+python3 tools/diagnose_from_gigacode_settings.py
+```
+
+If your `settings.json` is not in a default location, pass it explicitly:
+
+```bash
+python3 tools/diagnose_from_gigacode_settings.py "/absolute/path/to/settings.json"
 ```
 
 ## Parallel editor orchestration
