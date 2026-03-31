@@ -248,6 +248,12 @@ It prints JSON with:
 - discovered `python` and `mcp-atlassian` executables
 - existence and executability of explicitly passed file paths
 
+For the specific macOS paths used in this debugging thread, there is also a ready-made wrapper:
+
+```bash
+bash tools/run_target_diagnostic.sh
+```
+
 ## Parallel editor orchestration
 
 The orchestrator runs one shell command per section. The command receives escaped file paths via placeholders:
