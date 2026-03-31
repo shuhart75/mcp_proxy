@@ -232,6 +232,31 @@ then GigaCode launched the process but closed the pipe before any MCP handshake 
 
 For proxy-level tracing, add `--log-file /absolute/path/proxy-debug.log` to the proxy server args and inspect that file after restart.
 
+If the handwritten smoke server still fails, try the official Python SDK smoke server on the target machine:
+
+```json
+{
+  "mcpServers": {
+    "ConfluenceSections": {
+      "command": "/path/to/python-with-mcp-sdk",
+      "args": [
+        "/absolute/path/to/mcp_proxy/tools/fastmcp_smoke_server.py"
+      ],
+      "timeout": 60000,
+      "trust": false
+    }
+  }
+}
+```
+
+Then inspect:
+
+```bash
+cat /tmp/gigacode-fastmcp-smoke.log
+```
+
+If the FastMCP version connects while the handwritten smoke server does not, the issue is in the custom stdio/protocol implementation, not in GigaCode's ability to launch a local MCP process.
+
 If you suspect a protocol-library mismatch, run the runtime diagnostic script on the target machine:
 
 ```bash
