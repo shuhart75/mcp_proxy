@@ -4,6 +4,7 @@ import argparse
 from dataclasses import dataclass
 import json
 import logging
+from pathlib import Path
 import sys
 from typing import Any
 
@@ -12,7 +13,7 @@ from .config import AppConfig, load_app_config
 from .service import SectionService, format_tool_result
 
 
-logging.basicConfig(level=logging.ERROR)
+LOGGER = logging.getLogger("confluence_section_mcp.server")
 
 
 TOOLS = [
@@ -118,6 +119,7 @@ class ServerState:
 
     def get_service(self) -> SectionService:
         if self.service is None:
+            LOGGER.info("Initializing section service for mode=%s", self.config.mode)
             self.service = SectionService(build_adapter(self.config))
         return self.service
 
@@ -152,6 +154,7 @@ def _handle_tool_call(state: ServerState, message_id: Any, params: dict[str, Any
     name = params.get("name")
     arguments = params.get("arguments", {})
     try:
+        LOGGER.info("Handling tool call: %s", name)
         service = state.get_service()
         if name == "confluence_page_outline":
             return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.get_outline(**arguments))}
@@ -162,6 +165,7 @@ def _handle_tool_call(state: ServerState, message_id: Any, params: dict[str, Any
         if name == "confluence_apply_sections":
             return {"jsonrpc": "2.0", "id": message_id, "result": format_tool_result(service.apply_sections(**arguments))}
     except (AdapterError, KeyError, ValueError) as exc:
+        LOGGER.exception("Tool call failed: %s", name)
         return {"jsonrpc": "2.0", "id": message_id, "result": {"content": [{"type": "text", "text": str(exc)}], "isError": True}}
     return _error_response(message_id, -32601, f"Unknown tool: {name}")
 
@@ -169,45 +173,71 @@ def _handle_tool_call(state: ServerState, message_id: Any, params: dict[str, Any
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Section-aware Confluence MCP proxy.")
     parser.add_argument("--config", help="Path to JSON config file. If omitted, built-in search paths and env are used.")
+    parser.add_argument("--log-file", help="Path to a debug log file for MCP handshake tracing.")
     return parser.parse_args(argv)
+
+
+def _configure_logging(log_file: str | None) -> None:
+    LOGGER.handlers.clear()
+    LOGGER.setLevel(logging.INFO)
+    LOGGER.propagate = False
+    if not log_file:
+        LOGGER.addHandler(logging.NullHandler())
+        return
+    path = Path(log_file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(path, encoding="utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    LOGGER.addHandler(handler)
 
 
 def run(argv: list[str] | None = None) -> int:
     args = _parse_args(argv or sys.argv[1:])
+    _configure_logging(args.log_file)
+    LOGGER.info("Server process started")
     config = load_app_config(args.config)
+    LOGGER.info("Configuration loaded")
     state = ServerState(config=config)
     while True:
         message = _read_message(sys.stdin.buffer)
         if message is None:
+            LOGGER.info("stdin closed, exiting")
             return 0
         method = message.get("method")
         message_id = message.get("id")
+        LOGGER.info("Received method=%s id=%s", method, message_id)
         if method == "initialize":
             _write_message(sys.stdout.buffer, _handle_initialize(message_id))
+            LOGGER.info("initialize handled")
             continue
         if method == "notifications/initialized":
+            LOGGER.info("notifications/initialized received")
             continue
         if method == "tools/list":
             _write_message(
                 sys.stdout.buffer,
                 {"jsonrpc": "2.0", "id": message_id, "result": {"tools": TOOLS}},
             )
+            LOGGER.info("tools/list handled")
             continue
         if method == "tools/call":
             _write_message(sys.stdout.buffer, _handle_tool_call(state, message_id, message.get("params", {})))
+            LOGGER.info("tools/call handled")
             continue
         if method == "ping":
             _write_message(sys.stdout.buffer, {"jsonrpc": "2.0", "id": message_id, "result": {}})
+            LOGGER.info("ping handled")
             continue
         if message_id is not None:
             _write_message(sys.stdout.buffer, _error_response(message_id, -32601, f"Unsupported method: {method}"))
+            LOGGER.warning("Unsupported method=%s", method)
 
 
 def main() -> None:
     try:
         raise SystemExit(run())
     except ValueError as exc:
-        logging.error("%s", exc)
+        LOGGER.exception("Fatal configuration error")
         raise
 
 
