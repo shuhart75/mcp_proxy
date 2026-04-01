@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "Atlassian": {
+      "command": "$HOME/.gigacode/.venv/bin/python",
+      "args": [
+        "$HOME/.gigacode/.venv/bin/mcp-atlassian"
+      ],
+      "env": {
+        "JIRA_URL": "https://jira.example.sbrf.ru",
+        "JIRA_USERNAME": "YOUR_LOGIN@sberbank.ru",
+        "JIRA_PERSONAL_TOKEN": "YOUR_JIRA_TOKEN",
+        "JIRA_SSL_VERIFY": false,
+        "CONFLUENCE_URL": "https://confluence.example.sbrf.ru",
+        "CONFLUENCE_USERNAME": "YOUR_LOGIN@sberbank.ru",
+        "CONFLUENCE_PERSONAL_TOKEN": "YOUR_CONFLUENCE_TOKEN",
+        "CONFLUENCE_SSL_VERIFY": false
+      },
+      "includeTools": [
+        "confluence_get_page",
+        "confluence_update_page",
+        "confluence_search"
+      ],
+      "timeout": 60000,
+      "trust": false
+    }
+  }
+}
