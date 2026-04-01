@@ -160,3 +160,21 @@ cat ~/.gigacode/extensions/confluence-orchestrator/gigacode-extension.json
 ```
 
 Also verify that `~/.gigacode/settings.json` does not contain stale extension-related keys from older workflows.
+
+## 10. Move to Stage 2
+
+After stage 1 is confirmed working, continue with:
+
+```bash
+cat ~/.gigacode/confluence-orchestrator/stage2-runbook.md
+```
+
+That runbook describes the repeatable pipeline:
+
+1. fetch page once through the working Atlassian MCP
+2. prepare a local workspace
+3. generate chunk briefs
+4. dispatch one subagent per chunk
+5. merge locally and generate a diff
+6. run a controller subagent
+7. write back only after approval

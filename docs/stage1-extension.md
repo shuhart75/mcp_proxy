@@ -69,10 +69,14 @@ Stage 1 gives GigaCode a compatible orchestration layer:
 
 It deliberately avoids custom MCP transport work.
 
-## Planned Stage 2
+## Stage 2
 
-Stage 2 can add a dedicated helper plugin or external runner that automates:
+Stage 2 is now available and documented in [`stage2-runbook.md`](./stage2-runbook.md).
 
-- chunk subagent dispatch
-- controller approval gates
-- final write-back with fewer manual prompts
+It adds:
+
+- standard workspace preparation
+- generated chunk briefs
+- merge diff generation
+- controller status extraction
+- an explicit approval gate before write-back

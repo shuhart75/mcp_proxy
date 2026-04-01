@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import difflib
 import json
 from pathlib import Path
 import re
@@ -104,11 +105,9 @@ def _split_large_section(source: str, start: int, end: int, title: str, index: i
 
 def write_workspace(source_path: Path, output_dir: Path, source: str, strategy: str, chunks: list[Chunk]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
-    chunk_root = output_dir / "chunks"
-    chunk_root.mkdir(parents=True, exist_ok=True)
     manifest_chunks: list[dict[str, Any]] = []
     for chunk in chunks:
-        chunk_dir = chunk_root / chunk.chunk_id
+        chunk_dir = output_dir / chunk.chunk_id
         chunk_dir.mkdir(parents=True, exist_ok=True)
         chunk_text = source[chunk.start:chunk.end]
         (chunk_dir / "source.md").write_text(chunk_text, encoding="utf-8")
@@ -147,7 +146,9 @@ def merge_from_manifest(manifest_path: Path, output_path: Path) -> dict[str, Any
         source_chunk_path = Path(chunk["path"])
         selected_path = edited_path if edited_path.exists() else source_chunk_path
         used_paths.append(str(selected_path))
-        parts.append(selected_path.read_text(encoding="utf-8"))
+        replacement = selected_path.read_text(encoding="utf-8")
+        replacement = _match_trailing_newlines(source[start:end], replacement)
+        parts.append(replacement)
         cursor = end
     parts.append(source[cursor:])
     merged = "".join(parts)
@@ -159,3 +160,27 @@ def merge_from_manifest(manifest_path: Path, output_path: Path) -> dict[str, Any
         "chunks": len(manifest["chunks"]),
         "used_paths": used_paths,
     }
+
+
+def _match_trailing_newlines(original: str, replacement: str) -> str:
+    original_newlines = len(original) - len(original.rstrip("\n"))
+    replacement_newlines = len(replacement) - len(replacement.rstrip("\n"))
+    if replacement_newlines > original_newlines:
+        return replacement[: len(replacement) - (replacement_newlines - original_newlines)]
+    if replacement_newlines < original_newlines:
+        return replacement + ("\n" * (original_newlines - replacement_newlines))
+    return replacement
+
+
+def write_diff(source_text: str, merged_text: str, diff_path: Path, from_name: str = "before", to_name: str = "after") -> Path:
+    diff_path.parent.mkdir(parents=True, exist_ok=True)
+    diff = "".join(
+        difflib.unified_diff(
+            source_text.splitlines(keepends=True),
+            merged_text.splitlines(keepends=True),
+            fromfile=from_name,
+            tofile=to_name,
+        )
+    )
+    diff_path.write_text(diff, encoding="utf-8")
+    return diff_path

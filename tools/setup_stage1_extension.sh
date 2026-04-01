@@ -15,6 +15,7 @@ if [ "${REPO_DIR}" != "${TARGET_EXT_DIR}" ]; then
 fi
 
 cp "${REPO_DIR}/docs/stage1-macos-setup.md" "${TARGET_DOC_DIR}/stage1-macos-setup.md"
+cp "${REPO_DIR}/docs/stage2-runbook.md" "${TARGET_DOC_DIR}/stage2-runbook.md"
 cp "${REPO_DIR}/examples/stage1-atlassian-settings.sample.json" "${TARGET_DOC_DIR}/stage1-atlassian-settings.sample.json"
 
 cat <<EOF
@@ -25,13 +26,15 @@ Extension path:
 
 Copied reference files:
   ${TARGET_DOC_DIR}/stage1-macos-setup.md
+  ${TARGET_DOC_DIR}/stage2-runbook.md
   ${TARGET_DOC_DIR}/stage1-atlassian-settings.sample.json
 
 Next:
 1. Read ${TARGET_DOC_DIR}/stage1-macos-setup.md
 2. Update ~/.gigacode/settings.json using the sample
 3. Restart GigaCode
-4. In GigaCode, invoke:
+4. Validate stage 1, then continue with ${TARGET_DOC_DIR}/stage2-runbook.md
+5. In GigaCode, invoke:
    skill: using-confluence-orchestrator
    or
    /large-confluence-edit
