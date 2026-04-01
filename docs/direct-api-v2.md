@@ -60,6 +60,7 @@ work/review-jobs/<job-id>/
 - route GigaCode through overview-first inspection
 - read only selected chunks
 - enable review-only and review-and-fix modes
+- add direct publish path for approved jobs
 
 ### Phase 3
 
@@ -85,4 +86,55 @@ Advance the validation loop after a controller report:
 python3 scripts/advance_review_loop.py \
   --job-dir work/review-jobs/req-consistency-001 \
   --report work/review-jobs/req-consistency-001/reports/iteration-001/controller-report.md
+```
+
+Publish all changed pages from an approved job:
+
+```bash
+python3 scripts/publish_review_job.py \
+  --job-dir work/review-jobs/req-consistency-001 \
+  --config examples/confluence-rest.config.example.json
+```
+
+## Minimal GigaCode prompts
+
+### Review-only
+
+```text
+Use `multi-page-confluence-consistency`.
+
+Mode: review-only.
+Do not publish anything.
+
+Task:
+<describe the consistency rules>
+
+Job:
+1. Bootstrap a direct review job with the provided direct API config.
+2. Read only `job.json`, job `overview.md`, and page `overview.md` files first.
+3. Open only the chunks that are actually needed.
+4. Write a controller report.
+5. Advance the loop once and stop.
+```
+
+### Review-and-fix
+
+```text
+Use `multi-page-confluence-consistency`.
+
+Mode: review-and-fix.
+Publish only after approval.
+
+Task:
+<describe the required fixes>
+
+Job:
+1. Bootstrap a direct review job with the provided direct API config.
+2. Read only `job.json`, job `overview.md`, and page `overview.md` files first.
+3. Edit only the chunks that need changes.
+4. Merge only changed pages.
+5. Write a controller report.
+6. Advance the loop.
+7. If status is `needs-edits`, repeat targeted edits and one more controller pass.
+8. If status is `approved`, run `publish_review_job.py`.
 ```

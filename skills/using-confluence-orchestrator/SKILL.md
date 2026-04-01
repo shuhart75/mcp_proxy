@@ -1,30 +1,31 @@
 ---
 name: using-confluence-orchestrator
 description: Use when the user needs to modify a large Confluence page through GigaCode while keeping model context bounded and leveraging subagents.
+description: Use when the user needs to review or modify large Confluence pages through a direct API workflow with bounded context and minimal file-tool usage.
 ---
 
 # Using Confluence Orchestrator
 
 ## Purpose
 
-Route large Confluence editing requests into the chunked workflow instead of editing the whole page in one prompt.
+Route large Confluence review and edit requests into the direct API job workflow instead of editing whole pages in one prompt.
 
 ## When to use
 
 - The page is long enough that full-page editing would waste context.
 - The user wants a coordinated update across multiple sections.
-- The user explicitly mentions Confluence, mcp-atlassian, chunking, or subagents.
+- The user explicitly mentions Confluence, chunking, consistency review, or subagents.
 
 ## Rules
 
-- Prefer the existing Atlassian MCP server as the Confluence backend.
-- Do not build or rely on a custom MCP transport in this workflow.
-- Fetch the page once, store it locally, and operate on files from that point forward.
-- Use the chunking script if the page is large enough to justify splitting.
-- Use chunk subagents for independent sections.
-- Use a controller subagent before write-back.
-- Keep the final write-back as one controlled operation through the existing Atlassian MCP update tool.
-- If the page is short, skip chunking and edit it directly.
+- Prefer direct Confluence API via local scripts.
+- Do not expose live MCP tools to the model in this workflow.
+- Bootstrap one local review job and operate on files from that point forward.
+- Start with job and page overviews before reading any full chunk.
+- Use chunk edits only for sections that actually need changes.
+- Use a controller review before publish.
+- Repeat the loop if the controller returns `needs-fixes`.
+- Use subagents only when chunks are clearly independent and there is a real speed benefit.
 
 ## Routing
 

@@ -139,6 +139,33 @@ def advance_review_loop(*, job_dir: Path, report_path: Path) -> dict[str, Any]:
     return loop_status
 
 
+def collect_publish_candidates(job_dir: Path) -> dict[str, Any]:
+    payload = load_job_state(job_dir)
+    candidates: list[dict[str, Any]] = []
+    for page in payload.get("pages", []):
+        workspace_dir = Path(page["workspace_dir"])
+        merged_path = workspace_dir / "merged.md"
+        page_path = Path(page["page_path"])
+        if not merged_path.exists():
+            continue
+        if merged_path.read_text(encoding="utf-8") == page_path.read_text(encoding="utf-8"):
+            continue
+        candidates.append(
+            {
+                "page_id": page["page_id"],
+                "title": page["title"],
+                "workspace_dir": str(workspace_dir),
+                "input_path": str(merged_path),
+                "body_format": page["body_format"],
+            }
+        )
+    return {
+        "job_id": payload["job_id"],
+        "status": payload["status"],
+        "publish_candidates": candidates,
+    }
+
+
 def _render_job_overview(*, task_text: str, pages: list[ReviewPageRecord]) -> str:
     lines = [
         "# Review Job Overview",

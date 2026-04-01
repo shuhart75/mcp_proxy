@@ -1,95 +1,90 @@
 ---
 name: large-confluence-editing
-description: Execute a chunked Confluence page editing workflow using an existing Atlassian MCP server, local chunk/merge scripts, chunk-editor subagents, and a merge-controller subagent.
+description: Execute a direct API Confluence page review-and-fix workflow using local job scripts, chunk files, and an iterative validation loop.
 ---
 
 # Large Confluence Editing
 
 ## Goal
 
-Modify a large Confluence page without forcing one model context to hold the entire document at once.
+Modify one large Confluence page without forcing one model context to hold the entire document at once.
 
 ## Preconditions
 
-- A working Atlassian MCP server is already connected to GigaCode.
-- The following Confluence tools are available, or close equivalents:
-  - `mcp__Atlassian__confluence_get_page`
-  - `mcp__Atlassian__confluence_update_page`
+- A direct Confluence REST config is available locally.
 - Local scripts from this extension are available in the repository checkout.
 
 ## Workflow
 
 1. Identify the page id and the global task.
-2. Prefer the direct bootstrap script so the model does not have to write a large page body through a file tool:
+2. Bootstrap a direct review job:
 
 ```bash
-python3 scripts/bootstrap_confluence_workspace.py \
+python3 scripts/bootstrap_direct_review_job.py \
+  --job-id <job-id> \
   --page-id <page-id> \
-  --task-file work/confluence/<page-id>/incoming-task.md \
-  --workspace-root work/confluence \
-  --max-chars 12000
+  --config <direct-api-config.json> \
+  --task-file <task-file>
 ```
 
-3. If needed, write the user task to `work/confluence/<page-id>/incoming-task.md` before running the bootstrap script.
-4. Use manual fetch plus file save only as a fallback when the bootstrap script cannot be used.
-5. After bootstrap, build chunk briefs:
-
-```bash
-python3 scripts/build_chunk_briefs.py \
-  --manifest work/confluence/<page-id>/chunks/manifest.json \
-  --task-file work/confluence/<page-id>/task.md
-```
-
-6. Create one `confluence-chunk-editor` subagent per chunk. Each subagent receives:
-   - the global task
-   - the chunk id
-   - the path to its `brief.md`
-   - the path to its `source.md`
-   - the instruction to write output to `edited.md`
-7. Wait for all chunk editors to finish.
-8. Merge the results:
+3. Read only:
+   - `work/review-jobs/<job-id>/job.json`
+   - `work/review-jobs/<job-id>/overview.md`
+   - `work/review-jobs/<job-id>/pages/<page-id>/overview.md`
+4. Decide whether this is:
+   - review-only
+   - review-and-fix
+5. If fixes are needed, read only the relevant chunk files and edit only those chunks.
+6. Merge local results for the page that changed:
 
 ```bash
 python3 scripts/merge_confluence_chunks.py \
-  --manifest work/confluence/<page-id>/chunks/manifest.json \
-  --output work/confluence/<page-id>/merged.md \
-  --diff-output work/confluence/<page-id>/merged.diff
+  --manifest work/review-jobs/<job-id>/pages/<page-id>/chunks/manifest.json \
+  --output work/review-jobs/<job-id>/pages/<page-id>/merged.md \
+  --diff-output work/review-jobs/<job-id>/pages/<page-id>/merged.diff
 ```
 
-9. Create one `confluence-merge-controller` subagent. Give it:
-   - the global task
-   - `merged.md`
-   - `manifest.json`
-   - the instruction to write `controller-report.md`
-10. Summarize the controller verdict:
+7. Write a controller report to:
+
+```text
+work/review-jobs/<job-id>/reports/iteration-001/controller-report.md
+```
+
+The report must contain:
+
+- `Decision: approved` or `Decision: needs-fixes`
+- `Recommended next action: ...`
+
+8. Advance the validation loop:
 
 ```bash
-python3 scripts/collect_controller_summary.py \
-  --report work/confluence/<page-id>/controller-report.md
+python3 scripts/advance_review_loop.py \
+  --job-dir work/review-jobs/<job-id> \
+  --report work/review-jobs/<job-id>/reports/iteration-001/controller-report.md
 ```
 
-11. If the controller status approves the document, prefer direct write-back through the workspace script:
+9. If the loop status is `needs-edits`, apply the next round of targeted chunk edits and run another controller pass.
+10. If the loop status is `approved`, publish the job:
 
 ```bash
-python3 scripts/write_back_confluence_workspace.py \
-  --page-id <page-id> \
-  --input work/confluence/<page-id>/merged.md
+python3 scripts/publish_review_job.py \
+  --job-dir work/review-jobs/<job-id> \
+  --config <direct-api-config.json>
 ```
 
-12. Use the MCP update tool directly only as a fallback when the write-back script cannot be used.
-13. Report the controller summary and the write-back result to the user.
+11. Report the loop status and publish result to the user.
 
 ## Execution Rules
 
-- Never ask a chunk subagent to edit more than one chunk.
-- Keep chunk assignments disjoint.
+- Do not read the full page before inspecting `overview.md`.
+- Edit only chunks that are relevant to the task.
 - Preserve stable heading structure where possible.
-- Prefer the bootstrap and write-back scripts because they avoid large `write_file` and large MCP tool payloads passing through the model context.
-- Before write-back, use the merged local file as the single source of truth.
-- Use the controller status file as the approval gate before write-back.
+- Use subagents only if the page has multiple independent chunks that really need parallel editing.
+- Before publish, use `merged.md` as the single source of truth.
+- Use the loop status as the approval gate before publish.
 
 ## Write-back Guidance
 
-- The main session performs the final update.
-- Do not let chunk subagents call the update tool directly.
-- Include the controller's verdict in the final user report.
+- The main session performs the final publish.
+- Do not let chunk subagents publish directly.
+- Include the controller verdict and loop result in the final user report.
