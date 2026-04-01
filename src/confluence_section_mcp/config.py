@@ -31,6 +31,7 @@ class UpstreamMcpConfig:
     args: list[str]
     env: dict[str, str]
     env_passthrough: list[str]
+    call_timeout_ms: int
     get_page_tool: str
     update_page_tool: str
     page_id_arg: str
@@ -86,6 +87,7 @@ class AppConfig:
                     args=args,
                     env=env_map,
                     env_passthrough=env_passthrough,
+                    call_timeout_ms=int(_pick(payload, "upstream_mcp.call_timeout_ms", default=60000)),
                     get_page_tool=_pick(payload, "upstream_mcp.get_page_tool", env="CONFLUENCE_UPSTREAM_GET_TOOL", default="getConfluencePage").strip() or "getConfluencePage",
                     update_page_tool=_pick(payload, "upstream_mcp.update_page_tool", env="CONFLUENCE_UPSTREAM_UPDATE_TOOL", default="updateConfluencePage").strip() or "updateConfluencePage",
                     page_id_arg=_pick(payload, "upstream_mcp.page_id_arg", env="CONFLUENCE_UPSTREAM_PAGE_ID_ARG", default="pageId").strip() or "pageId",

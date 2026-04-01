@@ -35,6 +35,7 @@ Prepared files:
   ${TARGET_CONFIG_PATH}
   ${TARGET_PROMPT_DIR}/review-only-two-pages.md
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
+  ${REPO_DIR}/tools/bootstrap_req_consistency_001.sh
 
 What to do next on this machine:
 
@@ -42,14 +43,12 @@ What to do next on this machine:
    cd ${REPO_DIR}
    python3 -m unittest discover -s tests -v
 
-2. Bootstrap a review job through the existing hidden Atlassian MCP backend from ~/.gigacode/settings.json:
+2. Bootstrap the prepared review job for pages 18028730639 and 18048816272:
    cd ${REPO_DIR}
-   python3 scripts/bootstrap_direct_review_job.py \\
-     --job-id req-consistency-001 \\
-     --page-id PAGE_ID_1 \\
-     --page-id PAGE_ID_2 \\
-     --settings ~/.gigacode/settings.json \\
-     --task-text "Проверить страницы на консистентность терминологии, требований и описаний процессов. Ничего не публиковать."
+   bash tools/bootstrap_req_consistency_001.sh
+
+   Log file:
+   ${REPO_DIR}/work/review-jobs/req-consistency-001/bootstrap.log
 
 3. Then use this short prompt in GigaCode:
    ${TARGET_PROMPT_DIR}/review-only-existing-job.md

@@ -198,6 +198,7 @@ class ConfluenceRestAdapter(PageAdapter):
 
 class StdioMcpClient:
     def __init__(self, config: UpstreamMcpConfig) -> None:
+        self.call_timeout_ms = config.call_timeout_ms
         env = os.environ.copy()
         env.update(config.env)
         if config.env_passthrough:
@@ -250,10 +251,7 @@ class StdioMcpClient:
             while True:
                 message = self._read()
                 if message is None:
-                    stderr = b""
-                    if self.process and self.process.stderr:
-                        stderr = self.process.stderr.read()
-                    raise AdapterError(f"Upstream MCP process closed unexpectedly: {stderr.decode('utf-8', errors='replace')}")
+                    raise AdapterError("Upstream MCP process closed unexpectedly")
                 if message.get("id") != message_id:
                     continue
                 if "error" in message:

@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+from datetime import UTC, datetime
 import json
 from pathlib import Path
+import signal
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -30,6 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--task-file", help="Path to a text/markdown file containing the global task")
     parser.add_argument("--task-text", help="Inline task text if no task file is used")
     parser.add_argument("--max-chars", type=int, default=12000, help="Target maximum chunk size")
+    parser.add_argument("--log-file", help="Optional log file path. Defaults to <job-dir>/bootstrap.log")
     return parser.parse_args()
 
 
@@ -49,12 +53,46 @@ def main() -> int:
     job_dir = Path(args.workspace_root) / args.job_id
     pages_root = job_dir / "pages"
     pages_root.mkdir(parents=True, exist_ok=True)
+    log_path = Path(args.log_file) if args.log_file else job_dir / "bootstrap.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    adapter = build_adapter(config)
+    def log(message: str) -> None:
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        line = f"[{timestamp}] {message}"
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+        print(line, file=sys.stderr)
+
+    @contextmanager
+    def operation_timeout(timeout_ms: int | None, label: str):
+        if not timeout_ms:
+            yield
+            return
+
+        def handler(signum, frame):  # type: ignore[unused-argument]
+            raise TimeoutError(f"{label} timed out after {timeout_ms} ms")
+
+        previous = signal.signal(signal.SIGALRM, handler)
+        signal.setitimer(signal.ITIMER_REAL, timeout_ms / 1000.0)
+        try:
+            yield
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, previous)
+
+    timeout_ms = config.upstream_mcp.call_timeout_ms if config.mode == "mcp" and config.upstream_mcp else None
+
     page_records: list[ReviewPageRecord] = []
+    adapter = None
     try:
+        log(f"Initializing adapter backend mode={config.mode}")
+        with operation_timeout(timeout_ms, "adapter initialization"):
+            adapter = build_adapter(config)
         for page_id in args.page_ids:
-            snapshot = adapter.get_page(page_id)
+            log(f"Fetching page {page_id}")
+            with operation_timeout(timeout_ms, f"fetch page {page_id}"):
+                snapshot = adapter.get_page(page_id)
+            log(f"Fetched page {page_id}: title={snapshot.title!r}, body_format={snapshot.body_format}, version={snapshot.version}")
             incoming_dir = pages_root / page_id
             incoming_dir.mkdir(parents=True, exist_ok=True)
             source_path = incoming_dir / "incoming-page.source"
@@ -105,10 +143,17 @@ def main() -> int:
                     strategy=summary.strategy,
                 )
             )
+    except Exception as exc:
+        log(f"ERROR: {type(exc).__name__}: {exc}")
+        raise
     finally:
-        adapter.close()
+        if adapter is not None:
+            adapter.close()
 
     job_state = initialize_review_job(job_dir=job_dir, task_text=task_text, pages=page_records, max_chars=args.max_chars)
+    job_state["bootstrap_log"] = str(log_path)
+    (job_dir / "job.json").write_text(json.dumps(job_state, ensure_ascii=False, indent=2), encoding="utf-8")
+    log(f"Bootstrap complete: {job_dir}")
     print(json.dumps(job_state, ensure_ascii=False, indent=2))
     return 0
 

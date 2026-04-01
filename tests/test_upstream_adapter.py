@@ -19,6 +19,7 @@ class UpstreamAdapterTests(unittest.TestCase):
                 args=[str(fake_server)],
                 env={},
                 env_passthrough=[],
+                call_timeout_ms=60000,
                 get_page_tool="getConfluencePage",
                 update_page_tool="updateConfluencePage",
                 page_id_arg="pageId",

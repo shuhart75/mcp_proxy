@@ -46,6 +46,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.upstream_mcp.env["CONFLUENCE_URL"], "https://example.atlassian.net")
         self.assertEqual(config.upstream_mcp.get_page_tool, "confluence_get_page")
         self.assertTrue(config.upstream_mcp.get_page_extra_args["convert_to_markdown"])
+        self.assertEqual(config.upstream_mcp.call_timeout_ms, 60000)
 
     def test_loads_rest_ssl_config_from_json_file(self) -> None:
         payload = {
