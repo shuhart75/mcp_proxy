@@ -18,9 +18,10 @@ If your GigaCode build supports it, configure `includeTools` on the Atlassian MC
 
 ## Installation
 
-1. Clone this repository into `~/.gigacode/extensions/confluence-orchestrator`.
-2. Restart GigaCode.
-3. Confirm the extension loads without warnings about missing `gigacode-extension.json`.
+1. Clone this repository anywhere convenient, for example `~/mcp_proxy`.
+2. Run `bash tools/setup_stage1_extension.sh`.
+3. Restart GigaCode.
+4. Confirm the extension loads without warnings about missing `gigacode-extension.json`.
 
 ## Usage
 

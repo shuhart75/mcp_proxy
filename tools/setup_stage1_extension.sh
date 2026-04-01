@@ -9,10 +9,21 @@ TARGET_DOC_DIR="${HOME}/.gigacode/confluence-orchestrator"
 mkdir -p "${HOME}/.gigacode/extensions"
 mkdir -p "${TARGET_DOC_DIR}"
 
-if [ "${REPO_DIR}" != "${TARGET_EXT_DIR}" ]; then
-  rm -rf "${TARGET_EXT_DIR}"
-  ln -s "${REPO_DIR}" "${TARGET_EXT_DIR}"
-fi
+rm -rf "${TARGET_EXT_DIR}"
+mkdir -p "${TARGET_EXT_DIR}"
+
+rsync -a --delete \
+  --exclude '.git/' \
+  --exclude '__pycache__/' \
+  --exclude '*.py[cod]' \
+  --exclude '.pytest_cache/' \
+  --exclude '.DS_Store' \
+  --exclude 'work/' \
+  --exclude 'tmp-smoke/' \
+  --exclude 'tmp-mcp-smoke/' \
+  --exclude 'tmp-config-smoke/' \
+  --exclude '.confluence-section-jobs/' \
+  "${REPO_DIR}/" "${TARGET_EXT_DIR}/"
 
 cp "${REPO_DIR}/docs/stage1-macos-setup.md" "${TARGET_DOC_DIR}/stage1-macos-setup.md"
 cp "${REPO_DIR}/docs/stage2-runbook.md" "${TARGET_DOC_DIR}/stage2-runbook.md"
@@ -23,6 +34,9 @@ Stage 1 extension assets prepared.
 
 Extension path:
   ${TARGET_EXT_DIR}
+
+Extension contents were copied from:
+  ${REPO_DIR}
 
 Copied reference files:
   ${TARGET_DOC_DIR}/stage1-macos-setup.md
@@ -38,4 +52,5 @@ Next:
    skill: using-confluence-orchestrator
    or
    /large-confluence-edit
+6. After each git pull on this repository, run this setup script again to refresh the copied extension files
 EOF

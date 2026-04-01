@@ -44,8 +44,13 @@ bash tools/setup_stage1_extension.sh
 
 This does two things:
 
-- creates `~/.gigacode/extensions/confluence-orchestrator` as a symlink to this repository
+- copies this repository into `~/.gigacode/extensions/confluence-orchestrator`
 - copies reference setup files into `~/.gigacode/confluence-orchestrator/`
+
+Important:
+
+- after every `git pull`, run `bash tools/setup_stage1_extension.sh` again
+- this refreshes the copied extension files that GigaCode sees
 
 ## 3. Configure Atlassian MCP with a minimal Confluence tool set
 

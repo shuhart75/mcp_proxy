@@ -59,6 +59,10 @@ What to do next on this machine:
      --job-dir work/review-jobs/req-consistency-001 \\
      --config ${TARGET_CONFIG_PATH}
 
+6. After each future git pull, run again:
+   cd ${REPO_DIR}
+   bash tools/setup_other_machine_after_pull.sh
+
 Reference docs:
   ${TARGET_DOC_DIR}/direct-api-v2.md
   ${TARGET_DOC_DIR}/stage1-macos-setup.md
