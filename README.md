@@ -5,10 +5,10 @@ This repository now contains two tracks:
 1. A previous experimental custom MCP proxy.
 2. A new stage-1 GigaCode extension workflow that avoids custom MCP transport and builds on an already working Atlassian MCP server.
 
-The recommended path is the extension workflow documented in [`docs/stage1-extension.md`](./docs/stage1-extension.md).
+The recommended path for large-page review and editing is now the direct API design in [`docs/direct-api-v2.md`](./docs/direct-api-v2.md).
+The extension workflow documented in [`docs/stage1-extension.md`](./docs/stage1-extension.md) remains available as a legacy path.
 For step-by-step macOS installation commands, use [`docs/stage1-macos-setup.md`](./docs/stage1-macos-setup.md).
-After stage 1 is working, continue with [`docs/stage2-runbook.md`](./docs/stage2-runbook.md) for the repeatable chunk/subagent/controller pipeline.
-For tasks spanning two or more pages, use the multi-page consistency workflow rather than the single-page editing skill.
+The previous extension-oriented stage-2 flow is documented in [`docs/stage2-runbook.md`](./docs/stage2-runbook.md).
 
 `confluence-section-mcp` originally started as a small MCP server and CLI orchestrator that turns one large Confluence page into bounded sections.
 

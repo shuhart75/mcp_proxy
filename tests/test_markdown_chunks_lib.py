@@ -36,6 +36,13 @@ class MarkdownChunksTests(unittest.TestCase):
         self.assertEqual(strategy, "markers")
         self.assertEqual(chunks[0].chunk_id, "intro")
 
+    def test_split_html_headings(self) -> None:
+        source = "<p>Preface</p><h1>Scope</h1><p>Alpha</p><h2>Details</h2><p>Beta</p>"
+        strategy, chunks = split_markdown(source, max_chars=100)
+        self.assertEqual(strategy, "html-headings")
+        self.assertEqual(chunks[1].chunk_id, "001-scope")
+        self.assertEqual(chunks[2].chunk_id, "002-details")
+
     def test_merge_preserves_chunk_boundary_newlines(self) -> None:
         source = (
             "<!-- BEGIN:intro -->\n"

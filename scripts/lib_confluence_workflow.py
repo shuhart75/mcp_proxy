@@ -28,13 +28,15 @@ def prepare_workspace(
     workspace_root: Path,
     task_text: str,
     max_chars: int = 12000,
+    page_filename: str = "page.md",
+    original_filename: str = "page.original.md",
 ) -> WorkspaceSummary:
     source = page_file.read_text(encoding="utf-8")
     workspace_dir = workspace_root / page_id
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
-    page_target = workspace_dir / "page.md"
-    backup_target = workspace_dir / "page.original.md"
+    page_target = workspace_dir / page_filename
+    backup_target = workspace_dir / original_filename
     task_path = workspace_dir / "task.md"
     shutil.copyfile(page_file, page_target)
     shutil.copyfile(page_file, backup_target)

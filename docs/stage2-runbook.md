@@ -1,5 +1,9 @@
 # Stage 2 Runbook
 
+This runbook describes the earlier extension-oriented workflow.
+
+For the current recommended architecture, use [`direct-api-v2.md`](./direct-api-v2.md).
+
 Stage 2 turns the stage-1 extension into a repeatable semi-automatic workflow.
 
 The key idea is:

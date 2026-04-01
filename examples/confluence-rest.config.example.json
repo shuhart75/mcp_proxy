@@ -1,0 +1,10 @@
+{
+  "mode": "rest",
+  "rest": {
+    "base_url": "https://YOUR-CONFLUENCE.atlassian.net",
+    "body_format": "storage",
+    "email": "YOUR_EMAIL",
+    "api_token": "YOUR_CONFLUENCE_TOKEN",
+    "default_space_id": ""
+  }
+}

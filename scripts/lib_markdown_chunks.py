@@ -9,6 +9,9 @@ from typing import Any
 
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(?P<title>.+?)\s*$", re.MULTILINE)
+HTML_HEADING_RE = re.compile(
+    r"(?is)<h(?P<level>[1-6])(?:\s[^>]*)?>(?P<title>.*?)</h(?P=level)>"
+)
 BEGIN_RE = re.compile(r"<!--\s*BEGIN:(?P<id>[-\w./:]+)\s*-->")
 
 
@@ -33,6 +36,9 @@ def split_markdown(source: str, max_chars: int = 12000) -> tuple[str, list[Chunk
     heading_chunks = _split_headings(source, max_chars=max_chars)
     if heading_chunks:
         return "headings", heading_chunks
+    html_heading_chunks = _split_html_headings(source, max_chars=max_chars)
+    if html_heading_chunks:
+        return "html-headings", html_heading_chunks
     return "single", [Chunk(chunk_id="001-full-page", label="Full page", start=0, end=len(source))]
 
 
@@ -100,6 +106,25 @@ def _split_large_section(source: str, start: int, end: int, title: str, index: i
                 end=current_start + current_len,
             )
         )
+    return chunks
+
+
+def _split_html_headings(source: str, max_chars: int) -> list[Chunk]:
+    matches = list(HTML_HEADING_RE.finditer(source))
+    if not matches:
+        return []
+    chunks: list[Chunk] = []
+    if matches[0].start() > 0:
+        chunks.append(Chunk(chunk_id="000-preface", label="Preface", start=0, end=matches[0].start()))
+    for index, match in enumerate(matches, start=1):
+        start = match.start()
+        end = matches[index].start() if index < len(matches) else len(source)
+        raw_title = re.sub(r"(?is)<[^>]+>", " ", match.group("title"))
+        title = re.sub(r"\s+", " ", raw_title).strip() or f"Section {index}"
+        if end - start <= max_chars:
+            chunks.append(Chunk(chunk_id=f"{index:03d}-{_slugify(title)}", label=title, start=start, end=end))
+            continue
+        chunks.extend(_split_large_section(source, start, end, title, index, max_chars))
     return chunks
 
 
