@@ -28,4 +28,5 @@ Route large Confluence editing requests into the chunked workflow instead of edi
 
 ## Routing
 
-- For actual execution, invoke `large-confluence-editing`.
+- If the task targets one Confluence page, invoke `large-confluence-editing`.
+- If the task compares or aligns two or more Confluence pages, invoke `multi-page-confluence-consistency`.

@@ -11,6 +11,15 @@ It does not provide its own MCP transport. Instead it assumes an existing, worki
 - reviewing the merged document with a controller subagent
 - writing the final page back through the existing Atlassian MCP server
 
+It also supports a multi-page consistency workflow:
+
+- fetch each target page once
+- prepare one local workspace per page
+- optionally edit only the chunks that need changes
+- review the full page set with a cross-page controller subagent
+- stop after the report for review-only tasks
+- write back only after cross-page approval for fix tasks
+
 Preferred Atlassian MCP tools:
 
 - `mcp__Atlassian__confluence_get_page`

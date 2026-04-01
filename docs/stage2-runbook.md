@@ -123,3 +123,28 @@ Only after controller approval:
 - controller decision
 - whether write-back happened
 - main changes
+
+## Multi-page consistency mode
+
+If the task targets two or more pages, do not route it through the single-page editing skill.
+
+Use the `multi-page-confluence-consistency` skill instead.
+
+Recommended pattern:
+
+1. fetch each page once through the Atlassian MCP
+2. create one local workspace per page with `prepare_confluence_workspace.py`
+3. build briefs for each page
+4. choose one of two modes:
+   - review-only: no chunk edits, no merge, no write-back
+   - review-and-fix: run chunk editors only for the pages and chunks that need changes
+5. run one `confluence-cross-page-controller` over the complete page set
+6. stop after the report unless the user explicitly asked for write-back
+
+Suggested output files:
+
+- `work/confluence/<page-id>/workspace.json`
+- `work/confluence/<page-id>/chunks/manifest.json`
+- `work/confluence/<page-id>/merged.md` for pages that were changed
+- `work/confluence/<page-id>/merged.diff` for pages that were changed
+- `work/confluence/cross-page-report.md`
