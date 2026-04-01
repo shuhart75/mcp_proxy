@@ -1,0 +1,9 @@
+{
+  "name": "confluence-orchestrator",
+  "version": "0.1.0",
+  "description": "Large Confluence page editing workflow for GigaCode using an existing Atlassian MCP server.",
+  "contextFileName": "GIGACODE.md",
+  "commands": "commands",
+  "skills": "skills",
+  "agents": "agents"
+}
