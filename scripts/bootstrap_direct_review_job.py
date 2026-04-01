@@ -11,17 +11,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from confluence_section_mcp.adapters import build_adapter
 from confluence_section_mcp.config import load_app_config
+from confluence_section_mcp.gigacode_settings import build_app_config_from_gigacode_settings
 from lib_confluence_workflow import prepare_workspace
 from lib_review_job import ReviewPageRecord, build_page_overview, initialize_review_job
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create a Confluence review job with one local workspace per page. Intended for direct API rest mode, but file mode is also supported for local smoke tests."
+        description="Create a Confluence review job with one local workspace per page. Supports direct API config, local file mode, or hidden Atlassian MCP via GigaCode settings."
     )
     parser.add_argument("--job-id", required=True, help="Job identifier used under the workspace root")
     parser.add_argument("--page-id", action="append", dest="page_ids", required=True, help="Confluence page id to include; repeat for multiple pages")
-    parser.add_argument("--config", required=True, help="Path to direct API config JSON in rest mode")
+    source_group = parser.add_mutually_exclusive_group(required=True)
+    source_group.add_argument("--config", help="Path to adapter config JSON. Supports rest, file, or mcp modes.")
+    source_group.add_argument("--settings", help="Path to GigaCode settings.json for hidden Atlassian MCP backend")
+    parser.add_argument("--server-name", default="Atlassian", help="MCP server name inside settings.json when --settings is used")
     parser.add_argument("--workspace-root", default="work/review-jobs", help="Root directory where review jobs are created")
     parser.add_argument("--task-file", help="Path to a text/markdown file containing the global task")
     parser.add_argument("--task-text", help="Inline task text if no task file is used")
@@ -34,9 +38,12 @@ def main() -> int:
     if not args.task_file and not args.task_text:
         raise SystemExit("Provide --task-file or --task-text")
 
-    config = load_app_config(args.config)
-    if config.mode not in {"rest", "file"}:
-        raise SystemExit("bootstrap_direct_review_job.py supports only rest mode and local file mode")
+    if args.settings:
+        config = build_app_config_from_gigacode_settings(args.settings, server_name=args.server_name)
+    else:
+        config = load_app_config(args.config)
+    if config.mode not in {"rest", "file", "mcp"}:
+        raise SystemExit("bootstrap_direct_review_job.py supports rest, file, and hidden MCP backends only")
 
     task_text = args.task_text or Path(args.task_file).read_text(encoding="utf-8")
     job_dir = Path(args.workspace_root) / args.job_id

@@ -2,6 +2,8 @@
 
 This is the target architecture for large Confluence review and edit workflows.
 
+Direct API remains the target backend, but the same job workflow can temporarily use a hidden Atlassian MCP backend from `~/.gigacode/settings.json` when direct API authentication is blocked.
+
 ## Why this replaces the previous approach
 
 - Live MCP tools consume prompt context in GigaCode.

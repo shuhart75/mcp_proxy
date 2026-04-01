@@ -5,10 +5,13 @@ Use `multi-page-confluence-consistency`.
 Mode: review-only.
 Do not publish anything.
 Do not create subagents unless absolutely necessary.
-Use direct API workflow, not live MCP.
+Use the local review-job workflow.
+Do not use live MCP tools in the prompt loop.
+Use hidden Atlassian MCP through `~/.gigacode/settings.json` for page fetch only.
 
 Job ID: `req-consistency-001`
-Config: `~/.gigacode/confluence-orchestrator/confluence-rest.config.json`
+Settings: `~/.gigacode/settings.json`
+Server name: `Atlassian`
 
 Pages:
 - `<PAGE_ID_1>`
