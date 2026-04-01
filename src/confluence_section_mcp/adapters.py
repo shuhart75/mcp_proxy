@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import os
 import json
 from pathlib import Path
+import ssl
 import subprocess
 import threading
 from typing import Any
@@ -102,6 +103,14 @@ class FilePageAdapter(PageAdapter):
 class ConfluenceRestAdapter(PageAdapter):
     def __init__(self, config: RestConfig) -> None:
         self.config = config
+        self._ssl_context = self._build_ssl_context()
+
+    def _build_ssl_context(self) -> ssl.SSLContext:
+        if not self.config.ssl_verify:
+            return ssl._create_unverified_context()
+        if self.config.ca_bundle:
+            return ssl.create_default_context(cafile=self.config.ca_bundle)
+        return ssl.create_default_context()
 
     def _headers(self) -> dict[str, str]:
         headers = {
@@ -126,7 +135,7 @@ class ConfluenceRestAdapter(PageAdapter):
             data = json.dumps(payload, ensure_ascii=True).encode("utf-8")
         request = Request(url=url, data=data, headers=self._headers(), method=method)
         try:
-            with urlopen(request) as response:
+            with urlopen(request, context=self._ssl_context) as response:
                 body = response.read().decode("utf-8")
                 return json.loads(body) if body else {}
         except HTTPError as exc:

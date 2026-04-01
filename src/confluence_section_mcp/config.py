@@ -16,6 +16,8 @@ class RestConfig:
     api_token: str | None
     bearer_token: str | None
     default_space_id: str | None
+    ssl_verify: bool
+    ca_bundle: str | None
 
 
 @dataclass(frozen=True)
@@ -106,6 +108,8 @@ class AppConfig:
                 api_token=_pick(payload, "rest.api_token", env="CONFLUENCE_API_TOKEN", default="").strip() or None,
                 bearer_token=_pick(payload, "rest.bearer_token", env="CONFLUENCE_BEARER_TOKEN", default="").strip() or None,
                 default_space_id=_pick(payload, "rest.default_space_id", env="CONFLUENCE_SPACE_ID", default="").strip() or None,
+                ssl_verify=_coerce_bool(_pick(payload, "rest.ssl_verify", env="CONFLUENCE_SSL_VERIFY", default=True)),
+                ca_bundle=_pick(payload, "rest.ca_bundle", env="CONFLUENCE_CA_BUNDLE", default="").strip() or None,
             ),
             file=None,
             upstream_mcp=None,
@@ -166,3 +170,17 @@ def _coerce_json_map(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("Expected an object")
     return dict(value)
+
+
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    if isinstance(value, int):
+        return bool(value)
+    raise ValueError(f"Expected a boolean-compatible value, got: {value!r}")

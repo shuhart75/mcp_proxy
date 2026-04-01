@@ -5,6 +5,8 @@
     "body_format": "storage",
     "email": "YOUR_EMAIL",
     "api_token": "YOUR_CONFLUENCE_TOKEN",
+    "ssl_verify": false,
+    "ca_bundle": "",
     "default_space_id": ""
   }
 }

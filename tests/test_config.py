@@ -47,6 +47,30 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.upstream_mcp.get_page_tool, "confluence_get_page")
         self.assertTrue(config.upstream_mcp.get_page_extra_args["convert_to_markdown"])
 
+    def test_loads_rest_ssl_config_from_json_file(self) -> None:
+        payload = {
+            "mode": "rest",
+            "rest": {
+                "base_url": "https://confluence.example.internal",
+                "body_format": "storage",
+                "email": "user@example.com",
+                "api_token": "secret",
+                "default_space_id": "",
+                "ssl_verify": False,
+                "ca_bundle": "/tmp/ca.pem",
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "config.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            config = load_app_config(str(path))
+
+        self.assertEqual(config.mode, "rest")
+        assert config.rest is not None
+        self.assertEqual(config.rest.base_url, "https://confluence.example.internal")
+        self.assertFalse(config.rest.ssl_verify)
+        self.assertEqual(config.rest.ca_bundle, "/tmp/ca.pem")
+
 
 if __name__ == "__main__":
     unittest.main()

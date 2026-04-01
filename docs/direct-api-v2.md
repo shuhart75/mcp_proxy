@@ -80,6 +80,11 @@ python3 scripts/bootstrap_direct_review_job.py \
   --task-text "Check both pages for consistency and propose fixes."
 ```
 
+If your Confluence endpoint uses a corporate certificate chain that is not trusted by the local Python runtime, set one of these in the config:
+
+- `"ssl_verify": false` for a pragmatic internal-network setup
+- `"ssl_verify": true` plus `"ca_bundle": "/absolute/path/to/corporate-ca.pem"` for a stricter setup
+
 Advance the validation loop after a controller report:
 
 ```bash
