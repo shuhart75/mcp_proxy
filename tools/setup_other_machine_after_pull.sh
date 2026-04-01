@@ -21,6 +21,7 @@ cp "${REPO_DIR}/docs/direct-api-v2.md" "${TARGET_DOC_DIR}/direct-api-v2.md"
 cp "${REPO_DIR}/examples/confluence-rest.config.example.json" "${TARGET_CONFIG_SAMPLE_PATH}"
 cp "${REPO_DIR}/prompts/review-only-two-pages.md" "${TARGET_PROMPT_DIR}/review-only-two-pages.md"
 cp "${REPO_DIR}/prompts/review-only-existing-job.md" "${TARGET_PROMPT_DIR}/review-only-existing-job.md"
+cp "${REPO_DIR}/prompts/review-and-fix-existing-job.md" "${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md"
 
 if [ ! -f "${TARGET_CONFIG_PATH}" ]; then
   cp "${REPO_DIR}/examples/confluence-rest.config.example.json" "${TARGET_CONFIG_PATH}"
@@ -35,7 +36,9 @@ Prepared files:
   ${TARGET_CONFIG_PATH}
   ${TARGET_PROMPT_DIR}/review-only-two-pages.md
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
+  ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
   ${REPO_DIR}/tools/bootstrap_req_consistency_001.sh
+  ${REPO_DIR}/tools/publish_req_consistency_001.sh
 
 What to do next on this machine:
 
@@ -60,9 +63,7 @@ What to do next on this machine:
 
 5. If the job is approved later, publish with:
    cd ${REPO_DIR}
-   python3 scripts/publish_review_job.py \\
-     --job-dir work/review-jobs/req-consistency-001 \\
-     --settings ~/.gigacode/settings.json
+   bash tools/publish_req_consistency_001.sh
 
 6. After each future git pull, run again:
    cd ${REPO_DIR}
@@ -74,4 +75,5 @@ Reference docs:
   ${TARGET_DOC_DIR}/stage2-runbook.md
   ${TARGET_PROMPT_DIR}/review-only-two-pages.md
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
+  ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
 EOF
