@@ -26,22 +26,20 @@ Compare, review, and optionally align multiple Confluence pages without forcing 
 ## Workflow
 
 1. Identify all target page ids and the global consistency goal.
-2. For each page:
-   - fetch it through the Atlassian MCP tool
-   - save the markdown body to `work/confluence/<page-id>/incoming-page.md`
-   - save the shared task to `work/confluence/<page-id>/incoming-task.md`
-   - prepare the workspace:
+2. For each page, prefer the direct bootstrap script so the model does not have to write a large page body through a file tool:
 
 ```bash
-python3 scripts/prepare_confluence_workspace.py \
+python3 scripts/bootstrap_confluence_workspace.py \
   --page-id <page-id> \
-  --page-file work/confluence/<page-id>/incoming-page.md \
   --task-file work/confluence/<page-id>/incoming-task.md \
   --workspace-root work/confluence \
   --max-chars 12000
 ```
 
-3. For each page, build chunk briefs:
+3. If needed, write the shared task to `work/confluence/<page-id>/incoming-task.md` before running the bootstrap script.
+4. Use manual fetch plus file save only as a fallback when the bootstrap script cannot be used.
+
+5. For each page, build chunk briefs:
 
 ```bash
 python3 scripts/build_chunk_briefs.py \
@@ -49,10 +47,10 @@ python3 scripts/build_chunk_briefs.py \
   --task-file work/confluence/<page-id>/task.md
 ```
 
-4. Decide the operating mode:
+6. Decide the operating mode:
    - Review-only mode: do not edit chunks, use the prepared local workspaces as read-only inputs for analysis.
    - Review-and-fix mode: create one `confluence-chunk-editor` subagent per chunk that must be changed.
-5. In review-and-fix mode, wait for all chunk editors to finish and merge each page locally:
+7. In review-and-fix mode, wait for all chunk editors to finish and merge each page locally:
 
 ```bash
 python3 scripts/merge_confluence_chunks.py \
@@ -61,7 +59,7 @@ python3 scripts/merge_confluence_chunks.py \
   --diff-output work/confluence/<page-id>/merged.diff
 ```
 
-6. Create one `confluence-cross-page-controller` subagent. Give it:
+8. Create one `confluence-cross-page-controller` subagent. Give it:
    - the global task
    - the list of page ids
    - each page's `workspace.json`
@@ -70,10 +68,18 @@ python3 scripts/merge_confluence_chunks.py \
      - `page.md` in review-only mode
      - `merged.md` in review-and-fix mode
    - the instruction to write `work/confluence/cross-page-report.md`
-7. If the task is review-only, stop after the cross-page report and return the findings to the user.
-8. If the task is review-and-fix, use the cross-page report as the approval gate before any write-back.
-9. Only after approval, update each changed page through the Atlassian MCP update tool.
-10. Report the cross-page findings, changed pages, and write-back status to the user.
+9. If the task is review-only, stop after the cross-page report and return the findings to the user.
+10. If the task is review-and-fix, use the cross-page report as the approval gate before any write-back.
+11. Only after approval, prefer direct write-back for each changed page:
+
+```bash
+python3 scripts/write_back_confluence_workspace.py \
+  --page-id <page-id> \
+  --input work/confluence/<page-id>/merged.md
+```
+
+12. Use the MCP update tool directly only as a fallback when the write-back script cannot be used.
+13. Report the cross-page findings, changed pages, and write-back status to the user.
 
 ## Execution Rules
 

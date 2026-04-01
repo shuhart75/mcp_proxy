@@ -38,13 +38,7 @@ work/confluence/<page-id>/
 
 ## Step-by-step
 
-### 1. Save the fetched page locally
-
-After using `mcp__Atlassian__confluence_get_page`, save the markdown body to:
-
-```text
-work/confluence/<page-id>/incoming-page.md
-```
+### 1. Prefer direct workspace bootstrap
 
 Write the user request to:
 
@@ -52,18 +46,25 @@ Write the user request to:
 work/confluence/<page-id>/incoming-task.md
 ```
 
-### 2. Prepare the workspace
+Then bootstrap the workspace directly from `~/.gigacode/settings.json`:
 
 ```bash
-python3 scripts/prepare_confluence_workspace.py \
+python3 scripts/bootstrap_confluence_workspace.py \
   --page-id <page-id> \
-  --page-file work/confluence/<page-id>/incoming-page.md \
   --task-file work/confluence/<page-id>/incoming-task.md \
   --workspace-root work/confluence \
   --max-chars 12000
 ```
 
-### 3. Build chunk briefs
+This avoids large file writes through the model and is the recommended path when GigaCode emits errors like `API Error: terminated` during page-body writes.
+
+Fallback only if the bootstrap script cannot be used:
+
+1. fetch via Atlassian MCP
+2. save `incoming-page.md` manually
+3. run `prepare_confluence_workspace.py`
+
+### 2. Build chunk briefs
 
 ```bash
 python3 scripts/build_chunk_briefs.py \
@@ -71,7 +72,7 @@ python3 scripts/build_chunk_briefs.py \
   --task-file work/confluence/<page-id>/task.md
 ```
 
-### 4. Dispatch one chunk editor subagent per chunk
+### 3. Dispatch one chunk editor subagent per chunk
 
 Give each subagent:
 
@@ -80,7 +81,7 @@ Give each subagent:
 - the path to its `source.md`
 - the instruction to write `edited.md`
 
-### 5. Merge local results
+### 4. Merge local results
 
 ```bash
 python3 scripts/merge_confluence_chunks.py \
@@ -89,7 +90,7 @@ python3 scripts/merge_confluence_chunks.py \
   --diff-output work/confluence/<page-id>/merged.diff
 ```
 
-### 6. Run the controller subagent
+### 5. Run the controller subagent
 
 Give the controller:
 
@@ -98,7 +99,7 @@ Give the controller:
 - `chunks/manifest.json`
 - the instruction to write `controller-report.md`
 
-### 7. Collect the controller status
+### 6. Collect the controller status
 
 ```bash
 python3 scripts/collect_controller_summary.py \
@@ -107,9 +108,17 @@ python3 scripts/collect_controller_summary.py \
 
 If `approved` is `false`, stop and review the report.
 
-### 8. Write back through Atlassian MCP
+### 7. Prefer direct write-back
 
 Only after controller approval:
+
+```bash
+python3 scripts/write_back_confluence_workspace.py \
+  --page-id <page-id> \
+  --input work/confluence/<page-id>/merged.md
+```
+
+Fallback only if the write-back script cannot be used:
 
 - read `merged.md`
 - call `mcp__Atlassian__confluence_update_page`

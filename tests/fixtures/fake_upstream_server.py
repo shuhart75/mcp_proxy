@@ -61,11 +61,14 @@ while True:
         params = message.get("params", {})
         name = params.get("name")
         arguments = params.get("arguments", {})
-        if name == "getConfluencePage":
+        if name in {"getConfluencePage", "confluence_get_page"}:
             write_message({"jsonrpc": "2.0", "id": message_id, "result": tool_result(PAGE["body"])})
             continue
-        if name == "updateConfluencePage":
-            PAGE["body"] = arguments["body"]
+        if name in {"updateConfluencePage", "confluence_update_page"}:
+            body = arguments.get("body")
+            if body is None:
+                body = arguments.get("content")
+            PAGE["body"] = body
             if "title" in arguments:
                 PAGE["title"] = arguments["title"]
             write_message({"jsonrpc": "2.0", "id": message_id, "result": tool_result("ok")})
