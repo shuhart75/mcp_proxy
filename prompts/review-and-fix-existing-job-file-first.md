@@ -6,6 +6,7 @@ Mode: review-and-fix.
 Do not publish automatically.
 Do not create subagents unless absolutely necessary.
 This job is already bootstrapped from local files. Do not fetch pages again.
+Prefer an absolute job path. If a helper script generated a prompt with absolute paths, use that generated prompt instead of interpreting relative paths from the current working directory.
 
 Job directory:
 `work/review-jobs/req-consistency-001`

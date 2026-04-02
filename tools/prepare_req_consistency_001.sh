@@ -6,6 +6,9 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${REPO_DIR}"
 
+rm -rf "${REPO_DIR}/work/fetched-pages/req-consistency-001"
+rm -rf "${REPO_DIR}/work/review-jobs/req-consistency-001"
+
 bash "${REPO_DIR}/tools/fetch_req_consistency_001.sh"
 bash "${REPO_DIR}/tools/bootstrap_req_consistency_001_from_files.sh"
 
