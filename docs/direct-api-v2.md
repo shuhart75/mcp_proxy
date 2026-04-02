@@ -87,6 +87,19 @@ If your Confluence endpoint uses a corporate certificate chain that is not trust
 - `"ssl_verify": false` for a pragmatic internal-network setup
 - `"ssl_verify": true` plus `"ca_bundle": "/absolute/path/to/corporate-ca.pem"` for a stricter setup
 
+Authentication and endpoint mode:
+
+- Atlassian Cloud:
+  - `base_url`: `https://<site>.atlassian.net`
+  - `api_flavor`: `cloud` or `auto`
+  - auth: `email` + `api_token`
+- Confluence Server/Data Center:
+  - `base_url`: `https://<host>` or `https://<host>/<context-path>`
+  - `api_flavor`: `server` or `auto`
+  - auth: `bearer_token` with a personal access token
+
+If you see `401 Basic Authentication Failure` from an internal Tomcat-based Confluence, that usually means the instance is Server/Data Center and should use `bearer_token`, not Cloud-style `email` + `api_token`.
+
 Advance the validation loop after a controller report:
 
 ```bash

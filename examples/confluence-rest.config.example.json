@@ -1,10 +1,12 @@
 {
   "mode": "rest",
   "rest": {
-    "base_url": "https://YOUR-CONFLUENCE.atlassian.net",
+    "base_url": "https://YOUR-CONFLUENCE",
+    "api_flavor": "auto",
     "body_format": "storage",
-    "email": "YOUR_EMAIL",
-    "api_token": "YOUR_CONFLUENCE_TOKEN",
+    "email": "",
+    "api_token": "",
+    "bearer_token": "",
     "ssl_verify": false,
     "ca_bundle": "",
     "default_space_id": ""

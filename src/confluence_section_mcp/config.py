@@ -11,6 +11,7 @@ from typing import Any
 @dataclass(frozen=True)
 class RestConfig:
     base_url: str
+    api_flavor: str
     body_format: str
     email: str | None
     api_token: str | None
@@ -105,6 +106,7 @@ class AppConfig:
             mode="rest",
             rest=RestConfig(
                 base_url=base_url,
+                api_flavor=_pick(payload, "rest.api_flavor", env="CONFLUENCE_API_FLAVOR", default="auto").strip().lower() or "auto",
                 body_format=_pick(payload, "rest.body_format", env="CONFLUENCE_BODY_FORMAT", default="storage").strip() or "storage",
                 email=_pick(payload, "rest.email", env="CONFLUENCE_EMAIL", default="").strip() or None,
                 api_token=_pick(payload, "rest.api_token", env="CONFLUENCE_API_TOKEN", default="").strip() or None,

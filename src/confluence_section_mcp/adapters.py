@@ -105,6 +105,13 @@ class ConfluenceRestAdapter(PageAdapter):
         self.config = config
         self._ssl_context = self._build_ssl_context()
 
+    def _api_flavor(self) -> str:
+        if self.config.api_flavor in {"cloud", "server"}:
+            return self.config.api_flavor
+        if ".atlassian.net" in self.config.base_url:
+            return "cloud"
+        return "server"
+
     def _build_ssl_context(self) -> ssl.SSLContext:
         if not self.config.ssl_verify:
             return ssl._create_unverified_context()
@@ -144,7 +151,7 @@ class ConfluenceRestAdapter(PageAdapter):
         except URLError as exc:
             raise AdapterError(f"Confluence API {method} {path} failed: {exc.reason}") from exc
 
-    def get_page(self, page_id: str) -> PageSnapshot:
+    def _get_page_cloud(self, page_id: str) -> PageSnapshot:
         data = self._request(
             "GET",
             f"/wiki/api/v2/pages/{page_id}",
@@ -166,7 +173,36 @@ class ConfluenceRestAdapter(PageAdapter):
             space_id=(str(data["spaceId"]) if data.get("spaceId") is not None else self.config.default_space_id),
         )
 
-    def update_page(
+    def _get_page_server(self, page_id: str) -> PageSnapshot:
+        if self.config.body_format != "storage":
+            raise AdapterError("Confluence Server/Data Center currently supports only rest.body_format=storage")
+        data = self._request(
+            "GET",
+            f"/rest/api/content/{page_id}",
+            query={"expand": "body.storage,version,space"},
+        )
+        body = data.get("body", {}).get("storage", {}).get("value")
+        if body is None:
+            raise AdapterError(f"Page {page_id} did not include body.storage in the REST response")
+        space = data.get("space") or {}
+        space_id = space.get("id")
+        if space_id is None:
+            space_id = self.config.default_space_id
+        return PageSnapshot(
+            page_id=str(data.get("id", page_id)),
+            title=str(data.get("title", page_id)),
+            version=int(data.get("version", {}).get("number", 1)),
+            body=str(body),
+            body_format="storage",
+            space_id=(str(space_id) if space_id is not None else None),
+        )
+
+    def get_page(self, page_id: str) -> PageSnapshot:
+        if self._api_flavor() == "server":
+            return self._get_page_server(page_id)
+        return self._get_page_cloud(page_id)
+
+    def _update_page_cloud(
         self,
         page_id: str,
         title: str,
@@ -194,6 +230,49 @@ class ConfluenceRestAdapter(PageAdapter):
             payload["spaceId"] = target_space_id
         self._request("PUT", f"/wiki/api/v2/pages/{page_id}", payload=payload)
         return self.get_page(page_id)
+
+    def _update_page_server(
+        self,
+        page_id: str,
+        title: str,
+        body: str,
+        version: int,
+        version_message: str | None = None,
+        space_id: str | None = None,
+    ) -> PageSnapshot:
+        del version_message
+        del space_id
+        if self.config.body_format != "storage":
+            raise AdapterError("Confluence Server/Data Center currently supports only rest.body_format=storage")
+        payload: dict[str, Any] = {
+            "id": page_id,
+            "type": "page",
+            "title": title,
+            "version": {
+                "number": version + 1,
+            },
+            "body": {
+                "storage": {
+                    "value": body,
+                    "representation": "storage",
+                }
+            },
+        }
+        self._request("PUT", f"/rest/api/content/{page_id}", payload=payload)
+        return self.get_page(page_id)
+
+    def update_page(
+        self,
+        page_id: str,
+        title: str,
+        body: str,
+        version: int,
+        version_message: str | None = None,
+        space_id: str | None = None,
+    ) -> PageSnapshot:
+        if self._api_flavor() == "server":
+            return self._update_page_server(page_id, title, body, version, version_message, space_id)
+        return self._update_page_cloud(page_id, title, body, version, version_message, space_id)
 
 
 class StdioMcpClient:

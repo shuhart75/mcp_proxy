@@ -69,6 +69,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.mode, "rest")
         assert config.rest is not None
         self.assertEqual(config.rest.base_url, "https://confluence.example.internal")
+        self.assertEqual(config.rest.api_flavor, "auto")
         self.assertFalse(config.rest.ssl_verify)
         self.assertEqual(config.rest.ca_bundle, "/tmp/ca.pem")
 
