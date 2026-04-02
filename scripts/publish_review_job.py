@@ -13,6 +13,7 @@ from confluence_section_mcp.adapters import build_adapter
 from confluence_section_mcp.config import load_app_config
 from confluence_section_mcp.gigacode_settings import build_app_config_from_gigacode_settings
 from lib_review_job import collect_publish_candidates, load_job_state, write_job_state
+from lib_markdown_chunks import merge_from_manifest, write_diff
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,10 +44,16 @@ def main() -> int:
     if config.mode not in {"rest", "mcp"}:
         raise SystemExit("publish_review_job.py supports only rest and hidden MCP backends")
 
+    payload = _materialize_merged_outputs(job_dir, payload)
     candidates = collect_publish_candidates(job_dir)
     if args.dry_run:
         print(json.dumps(candidates, ensure_ascii=False, indent=2))
         return 0
+    if not candidates["publish_candidates"]:
+        raise SystemExit(
+            "No changed pages are ready for publish. "
+            "Either GigaCode did not edit any chunks, or merged outputs match the original page content."
+        )
 
     adapter = build_adapter(config)
     published: list[dict[str, object]] = []
@@ -85,6 +92,35 @@ def main() -> int:
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
+
+
+def _materialize_merged_outputs(job_dir: Path, payload: dict[str, object]) -> dict[str, object]:
+    materialized: list[dict[str, str]] = []
+    for page in payload.get("pages", []):
+        if not isinstance(page, dict):
+            continue
+        workspace_dir = Path(str(page["workspace_dir"]))
+        manifest_path = Path(str(page["manifest_path"]))
+        page_path = Path(str(page["page_path"]))
+        if not manifest_path.exists() or not page_path.exists():
+            continue
+        merged_path = workspace_dir / "merged.md"
+        diff_path = workspace_dir / "merged.diff"
+        merge_from_manifest(manifest_path, merged_path)
+        source_text = page_path.read_text(encoding="utf-8")
+        merged_text = merged_path.read_text(encoding="utf-8")
+        write_diff(source_text, merged_text, diff_path, from_name=page_path.name, to_name=merged_path.name)
+        materialized.append(
+            {
+                "page_id": str(page["page_id"]),
+                "merged_path": str(merged_path),
+                "diff_path": str(diff_path),
+            }
+        )
+    if materialized:
+        payload["materialized_outputs"] = materialized
+        write_job_state(job_dir, payload)
+    return payload
 
 
 if __name__ == "__main__":
