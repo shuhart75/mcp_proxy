@@ -4,18 +4,15 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash tools/run_real_confluence_smoke.sh start \
-    --job-id JOB_ID \
-    --config /path/to/confluence-rest.config.json \
-    --source PAGE_ID_OR_URL \
-    --default-parent PAGE_ID_OR_URL \
-    [--mode update|mixed] \
-    [--task-text "..."] \
-    [--task-file /path/to/task.md]
+  1. Edit the config block at the top of this file on the target machine.
+  2. Run:
+     bash tools/run_real_confluence_smoke.sh start
+  3. After GigaCode finishes, run:
+     bash tools/run_real_confluence_smoke.sh finish
 
-  bash tools/run_real_confluence_smoke.sh finish \
-    --job-id JOB_ID \
-    --config /path/to/confluence-rest.config.json
+Optional overrides:
+  bash tools/run_real_confluence_smoke.sh start --job-id JOB_ID --config /path/to/config.json
+  bash tools/run_real_confluence_smoke.sh finish --job-id JOB_ID --config /path/to/config.json
 
 Notes:
   - `start` runs the standard operator bootstrap on the target machine.
@@ -27,6 +24,17 @@ EOF
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Edit these values on the target machine once, then use:
+#   bash tools/run_real_confluence_smoke.sh start
+#   bash tools/run_real_confluence_smoke.sh finish
+DEFAULT_JOB_ID="real-smoke-001"
+DEFAULT_MODE="mixed"
+DEFAULT_CONFIG_PATH="${HOME}/.gigacode/confluence-orchestrator/confluence-rest.config.json"
+DEFAULT_SOURCE_REF="REPLACE_WITH_PAGE_ID_OR_URL"
+DEFAULT_PARENT_REF="REPLACE_WITH_PARENT_PAGE_ID_OR_URL"
+DEFAULT_TASK_TEXT="Update the existing page as needed and create one small child page to verify the mixed flow."
+DEFAULT_TASK_FILE=""
+
 if [[ $# -lt 1 ]]; then
   usage >&2
   exit 1
@@ -37,13 +45,13 @@ shift
 
 case "${SUBCOMMAND}" in
   start)
-    MODE="mixed"
-    JOB_ID=""
-    CONFIG_PATH=""
-    SOURCE_REF=""
-    DEFAULT_PARENT_REF=""
-    TASK_TEXT=""
-    TASK_FILE=""
+    MODE="${DEFAULT_MODE}"
+    JOB_ID="${DEFAULT_JOB_ID}"
+    CONFIG_PATH="${DEFAULT_CONFIG_PATH}"
+    SOURCE_REF="${DEFAULT_SOURCE_REF}"
+    DEFAULT_PARENT_REF="${DEFAULT_PARENT_REF}"
+    TASK_TEXT="${DEFAULT_TASK_TEXT}"
+    TASK_FILE="${DEFAULT_TASK_FILE}"
 
     while [[ $# -gt 0 ]]; do
       case "$1" in
@@ -87,8 +95,12 @@ case "${SUBCOMMAND}" in
       esac
     done
 
+    if [[ "${SOURCE_REF}" == "REPLACE_WITH_PAGE_ID_OR_URL" || "${DEFAULT_PARENT_REF}" == "REPLACE_WITH_PARENT_PAGE_ID_OR_URL" ]]; then
+      echo "Edit tools/run_real_confluence_smoke.sh and set DEFAULT_SOURCE_REF / DEFAULT_PARENT_REF before running." >&2
+      exit 1
+    fi
     if [[ -z "${JOB_ID}" || -z "${CONFIG_PATH}" || -z "${SOURCE_REF}" || -z "${DEFAULT_PARENT_REF}" ]]; then
-      echo "start requires --job-id, --config, --source, and --default-parent" >&2
+      echo "start requires job/config/source/default-parent values" >&2
       exit 1
     fi
     if [[ -z "${TASK_TEXT}" && -z "${TASK_FILE}" ]]; then
@@ -123,8 +135,8 @@ case "${SUBCOMMAND}" in
     echo "     bash tools/run_real_confluence_smoke.sh finish --job-id ${JOB_ID} --config ${CONFIG_PATH}"
     ;;
   finish)
-    JOB_ID=""
-    CONFIG_PATH=""
+    JOB_ID="${DEFAULT_JOB_ID}"
+    CONFIG_PATH="${DEFAULT_CONFIG_PATH}"
     while [[ $# -gt 0 ]]; do
       case "$1" in
         --job-id)
