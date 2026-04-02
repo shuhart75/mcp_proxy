@@ -110,6 +110,20 @@ class ReviewJobTests(unittest.TestCase):
             self.assertEqual(result["decision"], "review-only")
             self.assertEqual(result["recommended_next_action"], "none")
 
+    def test_initialize_review_job_persists_job_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            job_dir = Path(tmpdir) / "job-1"
+            payload = initialize_review_job(
+                job_dir=job_dir,
+                task_text="Create pages.",
+                pages=[],
+                max_chars=12000,
+                job_metadata={"request_mode": "create", "default_parent_id": "123"},
+            )
+            self.assertEqual(payload["job_metadata"]["request_mode"], "create")
+            stored = json.loads((job_dir / "job.json").read_text(encoding="utf-8"))
+            self.assertEqual(stored["job_metadata"]["default_parent_id"], "123")
+
 
 if __name__ == "__main__":
     unittest.main()

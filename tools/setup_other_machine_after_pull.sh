@@ -41,6 +41,8 @@ Prepared files:
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job-file-first.md
+  ${REPO_DIR}/tools/start_confluence_job.sh
+  ${REPO_DIR}/tools/finish_confluence_job.sh
   ${REPO_DIR}/tools/prepare_review_job.sh
   ${REPO_DIR}/tools/show_review_job_prompt.sh
   ${REPO_DIR}/tools/publish_review_job.sh
@@ -62,7 +64,21 @@ What to do next on this machine:
    cd ${REPO_DIR}
    python3 -m unittest discover -s tests -v
 
-2. Generic flow for any new review job:
+2. Recommended human-facing flow:
+   cd ${REPO_DIR}
+   bash tools/start_confluence_job.sh \
+     --job-id my-review-001 \
+     --mode mixed \
+     --source "https://confluence.example/pages/12345" \
+     --source "https://confluence.example/pages/67890" \
+     --default-parent "https://confluence.example/pages/99999" \
+     --task-text "Проверить страницы, при необходимости обновить существующие и создать новые страницы по результату."
+
+3. After GigaCode finishes:
+   cd ${REPO_DIR}
+   bash tools/finish_confluence_job.sh --job-id my-review-001
+
+4. Lower-level generic flow for any new review job:
    cd ${REPO_DIR}
    bash tools/prepare_review_job.sh \
      --job-id my-review-001 \
@@ -70,60 +86,60 @@ What to do next on this machine:
      --page-id 67890 \
      --task-text "Проверить страницы на консистентность терминологии и требований. Ничего не публиковать."
 
-3. Print a generic prompt:
+5. Print a generic prompt:
    cd ${REPO_DIR}
-   bash tools/show_review_job_prompt.sh --job-id my-review-001 --mode review-only
+   bash tools/show_review_job_prompt.sh --job-id my-review-001 --mode analyze
 
-4. If you want GigaCode to edit and later publish:
+6. If you want GigaCode to edit and later publish:
    cd ${REPO_DIR}
-   bash tools/show_review_job_prompt.sh --job-id my-review-001 --mode review-and-fix
+   bash tools/show_review_job_prompt.sh --job-id my-review-001 --mode update
 
-5. Publish an approved generic job:
+7. Publish an approved generic job:
    cd ${REPO_DIR}
    bash tools/publish_review_job.sh --job-id my-review-001
 
-6. Or publish with automatic debug collection:
+8. Or publish with automatic debug collection:
    cd ${REPO_DIR}
    bash tools/publish_review_job_with_debug.sh --job-id my-review-001
 
-7. Print a short summary for any generic job:
+9. Print a short summary for any generic job:
    cd ${REPO_DIR}
    bash tools/summarize_review_job.sh --job-id my-review-001
 
-8. Ready-made demo flow for req-consistency-001:
+10. Ready-made demo flow for req-consistency-001:
    cd ${REPO_DIR}
    bash tools/prepare_req_consistency_001.sh
 
-9. Print the default review-only demo prompt and paste it into GigaCode:
+11. Print the default review-only demo prompt and paste it into GigaCode:
    cd ${REPO_DIR}
    bash tools/show_req_consistency_001_prompt.sh
 
-10. If you explicitly want GigaCode to edit and later publish in the demo flow, use instead:
+12. If you explicitly want GigaCode to edit and later publish in the demo flow, use instead:
    cd ${REPO_DIR}
    bash tools/show_req_consistency_001_fix_prompt.sh
 
-11. Open the generated demo job overview manually if needed:
+13. Open the generated demo job overview manually if needed:
    cd ${REPO_DIR}
    sed -n '1,220p' work/review-jobs/req-consistency-001/job.json
    sed -n '1,220p' work/review-jobs/req-consistency-001/overview.md
 
-12. If the demo fix-mode job is approved later and actually has merged outputs, publish with:
+14. If the demo fix-mode job is approved later and actually has merged outputs, publish with:
    cd ${REPO_DIR}
    bash tools/publish_req_consistency_001.sh
 
-13. Or publish the demo flow with automatic debug collection on failure:
+15. Or publish the demo flow with automatic debug collection on failure:
    cd ${REPO_DIR}
    bash tools/publish_req_consistency_001_with_debug.sh
 
-14. Print a short demo job summary any time:
+16. Print a short demo job summary any time:
    cd ${REPO_DIR}
    bash tools/summarize_req_consistency_001.sh
 
-15. If something looks wrong, collect diagnostics into one file with:
+17. If something looks wrong, collect diagnostics into one file with:
    cd ${REPO_DIR}
    bash tools/collect_review_job_debug.sh req-consistency-001
 
-16. After each future git pull, run again:
+18. After each future git pull, run again:
    cd ${REPO_DIR}
    bash tools/setup_other_machine_after_pull.sh
 

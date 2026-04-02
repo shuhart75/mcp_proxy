@@ -51,7 +51,14 @@ def build_page_overview(*, manifest_path: Path, output_path: Path, title: str, p
     return output_path
 
 
-def initialize_review_job(*, job_dir: Path, task_text: str, pages: list[ReviewPageRecord], max_chars: int) -> dict[str, Any]:
+def initialize_review_job(
+    *,
+    job_dir: Path,
+    task_text: str,
+    pages: list[ReviewPageRecord],
+    max_chars: int,
+    job_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     job_dir.mkdir(parents=True, exist_ok=True)
     reports_dir = job_dir / "reports" / "iteration-001"
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -85,6 +92,7 @@ def initialize_review_job(*, job_dir: Path, task_text: str, pages: list[ReviewPa
         ],
         "history": [],
         "next_report_path": str(reports_dir / "controller-report.md"),
+        "job_metadata": job_metadata or {},
     }
     write_job_state(job_dir, payload)
     return payload

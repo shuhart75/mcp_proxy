@@ -53,16 +53,20 @@ if not job_path.exists():
 
 job = json.loads(job_path.read_text(encoding="utf-8"))
 loop = json.loads(loop_path.read_text(encoding="utf-8")) if loop_path.exists() else {}
+job_metadata = job.get("job_metadata") or {}
 
 print(f"job_id: {job.get('job_id')}")
 print(f"job_status: {job.get('status')}")
 print(f"loop_status: {loop.get('status')}")
 print(f"decision: {loop.get('decision')}")
 print(f"current_iteration: {job.get('current_iteration')}")
+print(f"request_mode: {job_metadata.get('request_mode')}")
+print(f"default_parent_id: {job_metadata.get('default_parent_id')}")
 print()
 
 pages = job.get("pages", [])
 published = {str(item.get("page_id")): item for item in job.get("published", [])}
+created_pages = {str(item.get("slug")): item for item in job.get("created_pages", [])}
 
 for page in pages:
     page_id = str(page["page_id"])
@@ -86,4 +90,32 @@ for page in pages:
         print(f"  previous_version: {published_item.get('previous_version')}")
         print(f"  updated_version: {published_item.get('updated_version')}")
     print()
+
+print("new_pages:")
+new_pages_root = job_dir / "new-pages"
+if new_pages_root.exists():
+    found = False
+    for page_dir in sorted(new_pages_root.iterdir()):
+        if not page_dir.is_dir() or page_dir.name.startswith("_"):
+            continue
+        found = True
+        meta_path = page_dir / "page.meta.json"
+        page_md_path = page_dir / "page.md"
+        meta = {}
+        if meta_path.exists():
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        created_item = created_pages.get(page_dir.name)
+        print(f"  slug: {page_dir.name}")
+        print(f"    page_md_exists: {page_md_path.exists()}")
+        print(f"    meta_exists: {meta_path.exists()}")
+        print(f"    title: {meta.get('title')}")
+        print(f"    parent_id: {meta.get('parent_id')}")
+        print(f"    created: {created_item is not None}")
+        if created_item is not None:
+            print(f"    created_page_id: {created_item.get('page_id')}")
+        print()
+    if not found:
+        print("  (none)")
+else:
+    print("  (none)")
 PY

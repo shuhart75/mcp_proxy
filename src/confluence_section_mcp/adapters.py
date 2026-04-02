@@ -35,6 +35,17 @@ class PageAdapter:
     def get_page(self, page_id: str) -> PageSnapshot:
         raise NotImplementedError
 
+    def create_page(
+        self,
+        title: str,
+        body: str,
+        *,
+        parent_id: str | None = None,
+        space_id: str | None = None,
+        version_message: str | None = None,
+    ) -> PageSnapshot:
+        raise NotImplementedError
+
     def update_page(
         self,
         page_id: str,
@@ -98,6 +109,38 @@ class FilePageAdapter(PageAdapter):
             meta["version_message"] = version_message
         self._meta_for(page_id).write_text(json.dumps(meta, ensure_ascii=True, indent=2), encoding="utf-8")
         return self.get_page(page_id)
+
+    def create_page(
+        self,
+        title: str,
+        body: str,
+        *,
+        parent_id: str | None = None,
+        space_id: str | None = None,
+        version_message: str | None = None,
+    ) -> PageSnapshot:
+        del parent_id
+        next_id = title
+        counter = 1
+        while self._path_for(next_id).exists():
+            counter += 1
+            next_id = f"{title}-{counter}"
+        snapshot = self.update_page(
+            page_id=next_id,
+            title=title,
+            body=body,
+            version=0,
+            version_message=version_message,
+            space_id=space_id,
+        )
+        return PageSnapshot(
+            page_id=snapshot.page_id,
+            title=title,
+            version=snapshot.version,
+            body=snapshot.body,
+            body_format=snapshot.body_format,
+            space_id=snapshot.space_id,
+        )
 
 
 class ConfluenceRestAdapter(PageAdapter):
@@ -201,6 +244,101 @@ class ConfluenceRestAdapter(PageAdapter):
         if self._api_flavor() == "server":
             return self._get_page_server(page_id)
         return self._get_page_cloud(page_id)
+
+    def _resolve_target_space_id(self, *, parent_id: str | None, space_id: str | None) -> str:
+        resolved = space_id or self.config.default_space_id
+        if resolved:
+            return str(resolved)
+        if parent_id:
+            parent = self.get_page(parent_id)
+            if parent.space_id:
+                return str(parent.space_id)
+        raise AdapterError("Create page requires space_id, default_space_id, or a parent page with a resolvable space_id")
+
+    def _create_page_cloud(
+        self,
+        title: str,
+        body: str,
+        *,
+        parent_id: str | None = None,
+        space_id: str | None = None,
+        version_message: str | None = None,
+    ) -> PageSnapshot:
+        del version_message
+        payload: dict[str, Any] = {
+            "spaceId": self._resolve_target_space_id(parent_id=parent_id, space_id=space_id),
+            "status": "current",
+            "title": title,
+            "body": {
+                "representation": self.config.body_format,
+                "value": body,
+            },
+        }
+        if parent_id:
+            payload["parentId"] = parent_id
+        created = self._request("POST", "/wiki/api/v2/pages", payload=payload)
+        page_id = str(created.get("id") or "")
+        if not page_id:
+            raise AdapterError("Confluence Cloud create page response did not include id")
+        return self.get_page(page_id)
+
+    def _create_page_server(
+        self,
+        title: str,
+        body: str,
+        *,
+        parent_id: str | None = None,
+        space_id: str | None = None,
+        version_message: str | None = None,
+    ) -> PageSnapshot:
+        del version_message
+        if self.config.body_format != "storage":
+            raise AdapterError("Confluence Server/Data Center currently supports only rest.body_format=storage")
+        payload: dict[str, Any] = {
+            "type": "page",
+            "title": title,
+            "space": {
+                "id": self._resolve_target_space_id(parent_id=parent_id, space_id=space_id),
+            },
+            "body": {
+                "storage": {
+                    "value": body,
+                    "representation": "storage",
+                }
+            },
+        }
+        if parent_id:
+            payload["ancestors"] = [{"id": str(parent_id)}]
+        created = self._request("POST", "/rest/api/content", payload=payload)
+        page_id = str(created.get("id") or "")
+        if not page_id:
+            raise AdapterError("Confluence Server/Data Center create page response did not include id")
+        return self.get_page(page_id)
+
+    def create_page(
+        self,
+        title: str,
+        body: str,
+        *,
+        parent_id: str | None = None,
+        space_id: str | None = None,
+        version_message: str | None = None,
+    ) -> PageSnapshot:
+        if self._api_flavor() == "server":
+            return self._create_page_server(
+                title,
+                body,
+                parent_id=parent_id,
+                space_id=space_id,
+                version_message=version_message,
+            )
+        return self._create_page_cloud(
+            title,
+            body,
+            parent_id=parent_id,
+            space_id=space_id,
+            version_message=version_message,
+        )
 
     def _update_page_cloud(
         self,
