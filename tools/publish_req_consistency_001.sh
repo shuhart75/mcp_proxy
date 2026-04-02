@@ -8,4 +8,4 @@ cd "${REPO_DIR}"
 
 python3 scripts/publish_review_job.py \
   --job-dir "work/review-jobs/req-consistency-001" \
-  --settings "${HOME}/.gigacode/settings.json"
+  --config "${HOME}/.gigacode/confluence-orchestrator/confluence-rest.config.json"

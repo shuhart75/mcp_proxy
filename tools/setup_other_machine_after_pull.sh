@@ -18,10 +18,12 @@ mkdir -p "${TARGET_PROMPT_DIR}"
 bash "${REPO_DIR}/tools/setup_stage1_extension.sh"
 
 cp "${REPO_DIR}/docs/direct-api-v2.md" "${TARGET_DOC_DIR}/direct-api-v2.md"
+cp "${REPO_DIR}/docs/file-first-v3.md" "${TARGET_DOC_DIR}/file-first-v3.md"
 cp "${REPO_DIR}/examples/confluence-rest.config.example.json" "${TARGET_CONFIG_SAMPLE_PATH}"
 cp "${REPO_DIR}/prompts/review-only-two-pages.md" "${TARGET_PROMPT_DIR}/review-only-two-pages.md"
 cp "${REPO_DIR}/prompts/review-only-existing-job.md" "${TARGET_PROMPT_DIR}/review-only-existing-job.md"
 cp "${REPO_DIR}/prompts/review-and-fix-existing-job.md" "${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md"
+cp "${REPO_DIR}/prompts/review-and-fix-existing-job-file-first.md" "${TARGET_PROMPT_DIR}/review-and-fix-existing-job-file-first.md"
 
 if [ ! -f "${TARGET_CONFIG_PATH}" ]; then
   cp "${REPO_DIR}/examples/confluence-rest.config.example.json" "${TARGET_CONFIG_PATH}"
@@ -32,13 +34,18 @@ Other-machine setup completed.
 
 Prepared files:
   ${TARGET_DOC_DIR}/direct-api-v2.md
+  ${TARGET_DOC_DIR}/file-first-v3.md
   ${TARGET_CONFIG_SAMPLE_PATH}
   ${TARGET_CONFIG_PATH}
   ${TARGET_PROMPT_DIR}/review-only-two-pages.md
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
-  ${REPO_DIR}/tools/bootstrap_req_consistency_001.sh
+  ${TARGET_PROMPT_DIR}/review-and-fix-existing-job-file-first.md
+  ${REPO_DIR}/tools/fetch_req_consistency_001.sh
+  ${REPO_DIR}/tools/bootstrap_req_consistency_001_from_files.sh
+  ${REPO_DIR}/tools/prepare_req_consistency_001.sh
   ${REPO_DIR}/tools/publish_req_consistency_001.sh
+  ${REPO_DIR}/tools/show_req_consistency_001_prompt.sh
 
 What to do next on this machine:
 
@@ -46,15 +53,13 @@ What to do next on this machine:
    cd ${REPO_DIR}
    python3 -m unittest discover -s tests -v
 
-2. Bootstrap the prepared review job for pages 18028730639 and 18048816272:
+2. Prepare the ready-made review job:
    cd ${REPO_DIR}
-   bash tools/bootstrap_req_consistency_001.sh
+   bash tools/prepare_req_consistency_001.sh
 
-   Log file:
-   ${REPO_DIR}/work/review-jobs/req-consistency-001/bootstrap.log
-
-3. Then use this short prompt in GigaCode:
-   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
+3. Print the ready-made prompt and paste it into GigaCode:
+   cd ${REPO_DIR}
+   bash tools/show_req_consistency_001_prompt.sh
 
 4. Open the generated job overview manually if needed:
    cd ${REPO_DIR}
@@ -71,9 +76,11 @@ What to do next on this machine:
 
 Reference docs:
   ${TARGET_DOC_DIR}/direct-api-v2.md
+  ${TARGET_DOC_DIR}/file-first-v3.md
   ${TARGET_DOC_DIR}/stage1-macos-setup.md
   ${TARGET_DOC_DIR}/stage2-runbook.md
   ${TARGET_PROMPT_DIR}/review-only-two-pages.md
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
+  ${TARGET_PROMPT_DIR}/review-and-fix-existing-job-file-first.md
 EOF
