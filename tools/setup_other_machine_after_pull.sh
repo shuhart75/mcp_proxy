@@ -41,6 +41,8 @@ Prepared files:
   ${TARGET_PROMPT_DIR}/review-only-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job.md
   ${TARGET_PROMPT_DIR}/review-and-fix-existing-job-file-first.md
+  ${REPO_DIR}/tools/cjob.sh
+  ${REPO_DIR}/tools/cfinish.sh
   ${REPO_DIR}/tools/start_confluence_job.sh
   ${REPO_DIR}/tools/finish_confluence_job.sh
   ${REPO_DIR}/tools/prepare_review_job.sh
@@ -66,17 +68,11 @@ What to do next on this machine:
 
 2. Recommended human-facing flow:
    cd ${REPO_DIR}
-   bash tools/start_confluence_job.sh \
-     --job-id my-review-001 \
-     --mode mixed \
-     --source "https://confluence.example/pages/12345" \
-     --source "https://confluence.example/pages/67890" \
-     --default-parent "https://confluence.example/pages/99999" \
-     --task-text "Проверить страницы, при необходимости обновить существующие и создать новые страницы по результату."
+   bash tools/cjob.sh
 
 3. After GigaCode finishes:
    cd ${REPO_DIR}
-   bash tools/finish_confluence_job.sh --job-id my-review-001
+   bash tools/cfinish.sh --job-id my-review-001
 
 4. Lower-level generic flow for any new review job:
    cd ${REPO_DIR}

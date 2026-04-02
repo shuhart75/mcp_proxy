@@ -30,6 +30,7 @@ CONFIG_PATH="${HOME}/.gigacode/confluence-orchestrator/confluence-rest.config.js
 MAX_CHARS="12000"
 SOURCE_REFS=()
 DEFAULT_PARENT_REF=""
+INTERACTIVE="0"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -76,6 +77,43 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ $# -eq 0 && -z "${JOB_ID}" && -z "${MODE}" && -z "${TASK_TEXT}" && -z "${TASK_FILE}" && ${#SOURCE_REFS[@]} -eq 0 ]]; then
+  INTERACTIVE="1"
+fi
+
+if [[ "${INTERACTIVE}" == "1" ]]; then
+  DEFAULT_JOB_ID="job-$(date +%Y%m%d-%H%M%S)"
+  printf "Job id [%s]: " "${DEFAULT_JOB_ID}"
+  read -r JOB_ID_INPUT
+  JOB_ID="${JOB_ID_INPUT:-${DEFAULT_JOB_ID}}"
+
+  echo "Mode options: analyze, update, create, mixed"
+  printf "Mode [mixed]: "
+  read -r MODE_INPUT
+  MODE="${MODE_INPUT:-mixed}"
+
+  echo "Paste task text. Finish with an empty line:"
+  TASK_LINES=()
+  while IFS= read -r line; do
+    [[ -z "${line}" ]] && break
+    TASK_LINES+=("${line}")
+  done
+  TASK_TEXT="$(printf '%s\n' "${TASK_LINES[@]}")"
+
+  if [[ "${MODE}" == "analyze" || "${MODE}" == "update" || "${MODE}" == "mixed" ]]; then
+    echo "Paste source page links or page ids, one per line. Finish with an empty line:"
+    while IFS= read -r line; do
+      [[ -z "${line}" ]] && break
+      SOURCE_REFS+=("${line}")
+    done
+  fi
+
+  if [[ "${MODE}" == "create" || "${MODE}" == "mixed" ]]; then
+    printf "Default parent page link or id: "
+    read -r DEFAULT_PARENT_REF
+  fi
+fi
 
 if [[ -z "${JOB_ID}" || -z "${MODE}" ]]; then
   echo "--job-id and --mode are required" >&2
