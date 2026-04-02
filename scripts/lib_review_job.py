@@ -210,4 +210,15 @@ def _parse_prefixed_value(text: str, prefix: str) -> str | None:
         line = raw_line.strip()
         if line.lower().startswith(needle):
             return line.split(":", 1)[1].strip()
+    header_with_value = re.search(rf"(?im)^(?:#+\s*)?{re.escape(prefix)}\s*:\s*(.+?)\s*$", text)
+    if header_with_value:
+        return header_with_value.group(1).strip()
+    section_header = re.search(rf"(?im)^(?:#+\s*)?{re.escape(prefix)}\s*$", text)
+    if section_header:
+        tail = text[section_header.end():]
+        for raw_line in tail.splitlines():
+            line = raw_line.strip()
+            if not line or line == "---":
+                continue
+            return line
     return None

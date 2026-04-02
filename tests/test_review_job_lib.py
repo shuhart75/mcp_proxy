@@ -78,6 +78,38 @@ class ReviewJobTests(unittest.TestCase):
             self.assertEqual(result["current_iteration"], 2)
             self.assertTrue((job_dir / "reports" / "iteration-002").exists())
 
+    def test_advance_review_loop_accepts_markdown_header_decision_format(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            job_dir = Path(tmpdir) / "job-1"
+            initialize_review_job(
+                job_dir=job_dir,
+                task_text="Check consistency.",
+                pages=[
+                    ReviewPageRecord(
+                        page_id="1",
+                        title="Page One",
+                        version=1,
+                        body_format="storage",
+                        workspace_dir="/tmp/job-1/pages/1",
+                        page_path="/tmp/job-1/pages/1/page.source",
+                        manifest_path="/tmp/job-1/pages/1/chunks/manifest.json",
+                        overview_path="/tmp/job-1/pages/1/overview.md",
+                        chunk_count=2,
+                        strategy="html-headings",
+                    )
+                ],
+                max_chars=12000,
+            )
+            report_path = job_dir / "reports" / "iteration-001" / "controller-report.md"
+            report_path.write_text(
+                "## Decision: review-only\n\n## Recommended next action\n\nnone\n",
+                encoding="utf-8",
+            )
+            result = advance_review_loop(job_dir=job_dir, report_path=report_path)
+            self.assertEqual(result["status"], "review-only")
+            self.assertEqual(result["decision"], "review-only")
+            self.assertEqual(result["recommended_next_action"], "none")
+
 
 if __name__ == "__main__":
     unittest.main()

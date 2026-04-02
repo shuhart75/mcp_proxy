@@ -47,6 +47,7 @@ Prepared files:
   ${REPO_DIR}/tools/publish_req_consistency_001.sh
   ${REPO_DIR}/tools/show_req_consistency_001_prompt.sh
   ${REPO_DIR}/tools/show_req_consistency_001_fix_prompt.sh
+  ${REPO_DIR}/tools/collect_review_job_debug.sh
 
 What to do next on this machine:
 
@@ -75,7 +76,11 @@ What to do next on this machine:
    cd ${REPO_DIR}
    bash tools/publish_req_consistency_001.sh
 
-7. After each future git pull, run again:
+7. If something looks wrong, collect diagnostics into one file with:
+   cd ${REPO_DIR}
+   bash tools/collect_review_job_debug.sh
+
+8. After each future git pull, run again:
    cd ${REPO_DIR}
    bash tools/setup_other_machine_after_pull.sh
 

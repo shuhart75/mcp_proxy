@@ -82,6 +82,23 @@ class MarkdownChunksTests(unittest.TestCase):
                 ),
             )
 
+    def test_merge_falls_back_to_chunk_merged_md_when_edited_missing(self) -> None:
+        source = "# One\nhello\n## Two\nworld\n"
+        strategy, chunks = split_markdown(source, max_chars=100)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            source_path = root / "page.md"
+            source_path.write_text(source, encoding="utf-8")
+            manifest_path = write_workspace(source_path, root / "workspace", source, strategy, chunks)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            first_chunk_source = Path(manifest["chunks"][0]["path"])
+            first_chunk_merged = first_chunk_source.with_name("merged.md")
+            first_chunk_merged.write_text("# One\nupdated via merged\n", encoding="utf-8")
+            merge_from_manifest(manifest_path, root / "merged.md")
+            merged = (root / "merged.md").read_text(encoding="utf-8")
+            self.assertIn("updated via merged", merged)
+            self.assertIn("world", merged)
+
 
 if __name__ == "__main__":
     unittest.main()

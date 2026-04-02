@@ -167,9 +167,7 @@ def merge_from_manifest(manifest_path: Path, output_path: Path) -> dict[str, Any
         start = int(chunk["start"])
         end = int(chunk["end"])
         parts.append(source[cursor:start])
-        edited_path = Path(chunk["edited_path"])
-        source_chunk_path = Path(chunk["path"])
-        selected_path = edited_path if edited_path.exists() else source_chunk_path
+        selected_path = _select_chunk_input_path(chunk)
         used_paths.append(str(selected_path))
         replacement = selected_path.read_text(encoding="utf-8")
         replacement = _match_trailing_newlines(source[start:end], replacement)
@@ -185,6 +183,16 @@ def merge_from_manifest(manifest_path: Path, output_path: Path) -> dict[str, Any
         "chunks": len(manifest["chunks"]),
         "used_paths": used_paths,
     }
+
+
+def _select_chunk_input_path(chunk: dict[str, Any]) -> Path:
+    edited_path = Path(chunk["edited_path"])
+    if edited_path.exists():
+        return edited_path
+    merged_path = Path(chunk["path"]).with_name("merged.md")
+    if merged_path.exists():
+        return merged_path
+    return Path(chunk["path"])
 
 
 def _match_trailing_newlines(original: str, replacement: str) -> str:
