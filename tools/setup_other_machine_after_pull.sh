@@ -46,6 +46,7 @@ Prepared files:
   ${REPO_DIR}/tools/prepare_req_consistency_001.sh
   ${REPO_DIR}/tools/publish_req_consistency_001.sh
   ${REPO_DIR}/tools/show_req_consistency_001_prompt.sh
+  ${REPO_DIR}/tools/show_req_consistency_001_fix_prompt.sh
 
 What to do next on this machine:
 
@@ -57,20 +58,24 @@ What to do next on this machine:
    cd ${REPO_DIR}
    bash tools/prepare_req_consistency_001.sh
 
-3. Print the ready-made prompt and paste it into GigaCode:
+3. Print the default review-only prompt and paste it into GigaCode:
    cd ${REPO_DIR}
    bash tools/show_req_consistency_001_prompt.sh
 
-4. Open the generated job overview manually if needed:
+4. If you explicitly want GigaCode to edit and later publish, use instead:
+   cd ${REPO_DIR}
+   bash tools/show_req_consistency_001_fix_prompt.sh
+
+5. Open the generated job overview manually if needed:
    cd ${REPO_DIR}
    sed -n '1,220p' work/review-jobs/req-consistency-001/job.json
    sed -n '1,220p' work/review-jobs/req-consistency-001/overview.md
 
-5. If the job is approved later, publish with:
+6. If the fix-mode job is approved later and actually has merged outputs, publish with:
    cd ${REPO_DIR}
    bash tools/publish_req_consistency_001.sh
 
-6. After each future git pull, run again:
+7. After each future git pull, run again:
    cd ${REPO_DIR}
    bash tools/setup_other_machine_after_pull.sh
 
