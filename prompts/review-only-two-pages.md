@@ -1,9 +1,8 @@
 # Review-Only Two Pages
 
-Use `multi-page-confluence-consistency`.
-
 Mode: review-only.
 Do not publish anything.
+Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.
 Do not create subagents unless absolutely necessary.
 Use the local review-job workflow.
 Do not use live MCP tools in the prompt loop.

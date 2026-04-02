@@ -143,11 +143,12 @@ cd "${REPO_DIR}"
 export PYTHONPATH="${REPO_DIR}/src:${REPO_DIR}/scripts${PYTHONPATH:+:${PYTHONPATH}}"
 
 JOB_DIR="${REPO_DIR}/work/review-jobs/${JOB_ID}"
+INTERNAL_JOB_DIR="${REPO_DIR}/work/review-jobs-internal/${JOB_ID}"
 FETCH_ROOT="${REPO_DIR}/work/fetched-pages/${JOB_ID}"
 TASK_PATH="${JOB_DIR}/task.md"
 PROMPT_PATH="${JOB_DIR}/gigacode-prompt.md"
 
-rm -rf "${FETCH_ROOT}" "${JOB_DIR}"
+rm -rf "${FETCH_ROOT}" "${JOB_DIR}" "${INTERNAL_JOB_DIR}"
 mkdir -p "${JOB_DIR}"
 
 if [[ -n "${TASK_FILE}" ]]; then
@@ -205,20 +206,24 @@ METADATA_ARGS=("${JOB_DIR}" "${MODE}" "${DEFAULT_PARENT_ID}" "${DEFAULT_PARENT_R
 for ref in "${SOURCE_REFS[@]}"; do
   METADATA_ARGS+=("${ref}")
 done
-python3 - <<'PY' "${METADATA_ARGS[@]}"
+python3 - <<'PY' "${REPO_DIR}" "${METADATA_ARGS[@]}"
 import json
 import sys
 from pathlib import Path
 
-job_dir = Path(sys.argv[1])
-mode = sys.argv[2]
-default_parent_id = sys.argv[3] or None
-default_parent_ref = sys.argv[4] or None
-task_path = sys.argv[5]
-source_refs = [item for item in sys.argv[6:] if item]
+repo_dir = Path(sys.argv[1])
+sys.path.insert(0, str(repo_dir / "scripts"))
 
-job_path = job_dir / "job.json"
-payload = json.loads(job_path.read_text(encoding="utf-8"))
+from lib_review_job import load_private_job_state, write_job_state
+
+job_dir = Path(sys.argv[2])
+mode = sys.argv[3]
+default_parent_id = sys.argv[4] or None
+default_parent_ref = sys.argv[5] or None
+task_path = sys.argv[6]
+source_refs = [item for item in sys.argv[7:] if item]
+
+payload = load_private_job_state(job_dir)
 metadata = dict(payload.get("job_metadata") or {})
 metadata.update(
     {
@@ -275,7 +280,7 @@ payload["job_metadata"] = metadata
     ),
     encoding="utf-8",
 )
-job_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+write_job_state(job_dir, payload)
 PY
 
 bash "${REPO_DIR}/tools/show_review_job_prompt.sh" --job-id "${JOB_ID}" --mode "${MODE}" > "${PROMPT_PATH}"

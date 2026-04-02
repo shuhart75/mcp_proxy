@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from confluence_section_mcp.adapters import build_adapter
 from confluence_section_mcp.config import load_app_config
-from lib_review_job import load_job_state, write_job_state
+from lib_review_job import load_private_job_state, write_job_state
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,13 +26,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     job_dir = Path(args.job_dir)
-    payload = load_job_state(job_dir)
+    payload = load_private_job_state(job_dir)
     if payload.get("status") not in {"approved", "published"}:
         raise SystemExit(f"Review job is not approved for create-page publish: {payload.get('status')}")
 
     config = load_app_config(args.config)
-    if config.mode != "rest":
-        raise SystemExit("publish_new_pages.py currently supports only rest mode")
+    if config.mode not in {"rest", "file"}:
+        raise SystemExit("publish_new_pages.py currently supports rest and file modes")
 
     candidates = collect_new_page_candidates(job_dir, payload)
     if args.dry_run:

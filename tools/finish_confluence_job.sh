@@ -57,11 +57,18 @@ import shutil
 import sys
 from pathlib import Path
 
+repo_dir = Path.cwd()
+sys.path.insert(0, str(repo_dir / "scripts"))
+
+from lib_review_job import load_private_job_state, validate_job_outputs
+from publish_review_job import _materialize_merged_outputs
+
 job_dir = Path(sys.argv[1])
-job_path = job_dir / "job.json"
-if not job_path.exists():
-    raise SystemExit(f"Job file not found: {job_path}")
-payload = json.loads(job_path.read_text(encoding="utf-8"))
+payload = load_private_job_state(job_dir)
+validation = validate_job_outputs(job_dir, payload)
+if not validation["ok"]:
+    raise SystemExit("Strict review job validation failed:\n- " + "\n- ".join(validation["errors"]))
+payload = _materialize_merged_outputs(job_dir, payload)
 
 updated_root = job_dir / "artifacts" / "updated-pages"
 new_root = job_dir / "artifacts" / "new-pages"
@@ -104,19 +111,27 @@ import json
 import sys
 from pathlib import Path
 
+repo_dir = Path.cwd()
+sys.path.insert(0, str(repo_dir / "scripts"))
+
+from lib_review_job import load_private_job_state
+
 job_dir = Path(sys.argv[1])
-job_path = job_dir / "job.json"
-if not job_path.exists():
-    raise SystemExit(f"Job file not found: {job_path}")
-payload = json.loads(job_path.read_text(encoding="utf-8"))
+payload = load_private_job_state(job_dir)
 print(json.dumps({"status": payload.get("status"), "job_metadata": payload.get("job_metadata", {})}, ensure_ascii=False))
 PY
 
 if [[ "${DO_PUBLISH}" == "1" ]]; then
   JOB_STATUS="$(python3 - <<'PY' "${JOB_DIR}"
-import json, sys
+import sys
 from pathlib import Path
-payload = json.loads((Path(sys.argv[1]) / "job.json").read_text(encoding="utf-8"))
+
+repo_dir = Path.cwd()
+sys.path.insert(0, str(repo_dir / "scripts"))
+
+from lib_review_job import load_private_job_state
+
+payload = load_private_job_state(Path(sys.argv[1]))
 print(payload.get("status", ""))
 PY
 )"

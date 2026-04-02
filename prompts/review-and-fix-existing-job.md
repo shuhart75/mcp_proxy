@@ -1,9 +1,8 @@
 # Review-And-Fix Existing Job
 
-Use `multi-page-confluence-consistency`.
-
 Mode: review-and-fix.
 Do not publish automatically.
+Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.
 Do not create subagents unless absolutely necessary.
 
 Job directory:

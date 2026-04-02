@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from lib_confluence_workflow import prepare_workspace
 from lib_page_store import read_snapshot_from_file_root
-from lib_review_job import ReviewPageRecord, build_page_overview, initialize_review_job
+from lib_review_job import ReviewPageRecord, build_page_overview, initialize_review_job, private_job_dir
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,13 +36,15 @@ def main() -> int:
     task_text = args.task_text or Path(args.task_file).read_text(encoding="utf-8")
     job_dir = Path(args.workspace_root) / args.job_id
     pages_root = job_dir / "pages"
+    private_pages_root = private_job_dir(job_dir) / "pages"
     pages_root.mkdir(parents=True, exist_ok=True)
+    private_pages_root.mkdir(parents=True, exist_ok=True)
     input_root = Path(args.input_root)
 
     page_records: list[ReviewPageRecord] = []
     for page_id in args.page_ids:
         snapshot = read_snapshot_from_file_root(page_id, input_root)
-        incoming_dir = pages_root / page_id
+        incoming_dir = private_pages_root / page_id
         incoming_dir.mkdir(parents=True, exist_ok=True)
         source_path = incoming_dir / "incoming-page.source"
         source_path.write_text(snapshot.body, encoding="utf-8")
@@ -54,6 +56,7 @@ def main() -> int:
             max_chars=args.max_chars,
             page_filename="page.source",
             original_filename="page.original.source",
+            private_workspace_root=private_pages_root,
         )
         meta_path = Path(summary.workspace_dir) / "page.meta.json"
         meta_path.write_text(

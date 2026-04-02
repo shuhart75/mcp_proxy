@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from lib_review_job import ReviewPageRecord, advance_review_loop, build_page_overview, initialize_review_job
+from lib_review_job import ReviewPageRecord, advance_review_loop, build_page_overview, initialize_review_job, load_job_state, load_private_job_state, private_job_dir
 
 
 class ReviewJobTests(unittest.TestCase):
@@ -121,8 +121,36 @@ class ReviewJobTests(unittest.TestCase):
                 job_metadata={"request_mode": "create", "default_parent_id": "123"},
             )
             self.assertEqual(payload["job_metadata"]["request_mode"], "create")
-            stored = json.loads((job_dir / "job.json").read_text(encoding="utf-8"))
+            stored = load_job_state(job_dir)
             self.assertEqual(stored["job_metadata"]["default_parent_id"], "123")
+
+    def test_initialize_review_job_hides_private_page_paths_from_public_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            job_dir = Path(tmpdir) / "job-1"
+            initialize_review_job(
+                job_dir=job_dir,
+                task_text="Check consistency.",
+                pages=[
+                    ReviewPageRecord(
+                        page_id="1",
+                        title="Page One",
+                        version=1,
+                        body_format="storage",
+                        workspace_dir="/tmp/job-1/pages/1",
+                        page_path="/tmp/job-1-internal/pages/1/page.source",
+                        manifest_path="/tmp/job-1/pages/1/chunks/manifest.json",
+                        overview_path="/tmp/job-1/pages/1/overview.md",
+                        chunk_count=2,
+                        strategy="html-headings",
+                    )
+                ],
+                max_chars=12000,
+            )
+            public_state = load_job_state(job_dir)
+            private_state = load_private_job_state(job_dir)
+            self.assertNotIn("page_path", public_state["pages"][0])
+            self.assertEqual(private_state["pages"][0]["page_path"], "/tmp/job-1-internal/pages/1/page.source")
+            self.assertTrue((private_job_dir(job_dir) / "job.json").exists())
 
 
 if __name__ == "__main__":

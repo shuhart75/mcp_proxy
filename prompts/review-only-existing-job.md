@@ -1,9 +1,8 @@
 # Review-Only Existing Job
 
-Use `multi-page-confluence-consistency`.
-
 Mode: review-only.
 Do not publish anything.
+Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.
 Do not create subagents unless absolutely necessary.
 This job is already bootstrapped from local files. Do not fetch pages again.
 

@@ -12,8 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from confluence_section_mcp.adapters import build_adapter
 from confluence_section_mcp.config import load_app_config
 from confluence_section_mcp.gigacode_settings import build_app_config_from_gigacode_settings
-from lib_review_job import collect_publish_candidates, load_job_state, write_job_state
-from lib_markdown_chunks import merge_from_manifest, write_diff
+from lib_review_job import (
+    collect_publish_candidates,
+    load_private_job_state,
+    materialize_merged_outputs,
+    validate_job_outputs,
+    write_job_state,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,7 +38,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     job_dir = Path(args.job_dir)
-    payload = load_job_state(job_dir)
+    payload = load_private_job_state(job_dir)
     if payload.get("status") not in {"approved"}:
         raise SystemExit(f"Review job is not approved for publish: {payload.get('status')}")
 
@@ -41,9 +46,12 @@ def main() -> int:
         config = build_app_config_from_gigacode_settings(args.settings, server_name=args.server_name)
     else:
         config = load_app_config(args.config)
-    if config.mode not in {"rest", "mcp"}:
-        raise SystemExit("publish_review_job.py supports only rest and hidden MCP backends")
+    if config.mode not in {"rest", "mcp", "file"}:
+        raise SystemExit("publish_review_job.py supports rest, file, and hidden MCP backends")
 
+    validation = validate_job_outputs(job_dir, payload)
+    if not validation["ok"]:
+        raise SystemExit("Review job failed strict output validation:\n- " + "\n- ".join(validation["errors"]))
     payload = _materialize_merged_outputs(job_dir, payload)
     candidates = collect_publish_candidates(job_dir)
     if args.dry_run:
@@ -95,32 +103,7 @@ def main() -> int:
 
 
 def _materialize_merged_outputs(job_dir: Path, payload: dict[str, object]) -> dict[str, object]:
-    materialized: list[dict[str, str]] = []
-    for page in payload.get("pages", []):
-        if not isinstance(page, dict):
-            continue
-        workspace_dir = Path(str(page["workspace_dir"]))
-        manifest_path = Path(str(page["manifest_path"]))
-        page_path = Path(str(page["page_path"]))
-        if not manifest_path.exists() or not page_path.exists():
-            continue
-        merged_path = workspace_dir / "merged.md"
-        diff_path = workspace_dir / "merged.diff"
-        merge_from_manifest(manifest_path, merged_path)
-        source_text = page_path.read_text(encoding="utf-8")
-        merged_text = merged_path.read_text(encoding="utf-8")
-        write_diff(source_text, merged_text, diff_path, from_name=page_path.name, to_name=merged_path.name)
-        materialized.append(
-            {
-                "page_id": str(page["page_id"]),
-                "merged_path": str(merged_path),
-                "diff_path": str(diff_path),
-            }
-        )
-    if materialized:
-        payload["materialized_outputs"] = materialized
-        write_job_state(job_dir, payload)
-    return payload
+    return materialize_merged_outputs(job_dir, payload)
 
 
 if __name__ == "__main__":

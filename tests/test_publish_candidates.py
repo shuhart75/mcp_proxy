@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from lib_review_job import collect_publish_candidates, initialize_review_job, ReviewPageRecord
+from lib_review_job import collect_publish_candidates, initialize_review_job, load_job_state, load_private_job_state, ReviewPageRecord
 from publish_review_job import _materialize_merged_outputs
 
 
@@ -65,6 +65,9 @@ class PublishCandidatesTests(unittest.TestCase):
                 max_chars=12000,
             )
             payload = json.loads((job_dir / "job.json").read_text(encoding="utf-8"))
+            self.assertNotIn("page_path", payload["pages"][0])
+            private_payload = load_private_job_state(job_dir)
+            self.assertEqual(private_payload["pages"][0]["page_path"], str(source_path))
             _materialize_merged_outputs(job_dir, payload)
             self.assertEqual((page_dir / "merged.md").read_text(encoding="utf-8"), "Changed")
             self.assertTrue((page_dir / "merged.diff").exists())
@@ -97,9 +100,10 @@ class PublishCandidatesTests(unittest.TestCase):
                 ],
                 max_chars=12000,
             )
-            payload = json.loads((job_dir / "job.json").read_text(encoding="utf-8"))
+            payload = load_private_job_state(job_dir)
             payload["status"] = "approved"
-            (job_dir / "job.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            from lib_review_job import write_job_state
+            write_job_state(job_dir, payload)
             result = collect_publish_candidates(job_dir)
             self.assertEqual(len(result["publish_candidates"]), 1)
             self.assertEqual(result["publish_candidates"][0]["page_id"], "123")

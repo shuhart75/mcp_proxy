@@ -22,10 +22,13 @@ class ConfluenceWorkflowTests(unittest.TestCase):
                 page_id="123",
                 page_file=page_file,
                 workspace_root=root / "work",
+                private_workspace_root=root / "hidden",
                 task_text="Update both sections.",
                 max_chars=100,
             )
             self.assertTrue(summary.should_chunk)
+            self.assertFalse((Path(summary.workspace_dir) / "page.md").exists())
+            self.assertTrue(Path(summary.page_path).exists())
             manifest_path = Path(summary.manifest_path)
             task_path = Path(summary.task_path)
             result = build_chunk_briefs(manifest_path=manifest_path, task_path=task_path)

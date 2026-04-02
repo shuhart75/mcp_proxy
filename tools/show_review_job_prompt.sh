@@ -80,14 +80,16 @@ finish_script = repo_dir / "tools" / "finish_confluence_job.sh"
 new_pages_dir = job_dir / "new-pages"
 default_parent_id = job_metadata.get("default_parent_id")
 
-print("Use `multi-page-confluence-consistency`.\n")
 print(f"Mode: {mode}.")
 if mode == "analyze":
     print("Do not publish anything.")
 else:
     print("Do not publish automatically.")
+print("Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.")
 print("Do not create subagents unless absolutely necessary.")
 print("This job is already bootstrapped from local files. Do not fetch pages again.")
+print("Do not inspect or edit full-source page files such as `page.source`, `page.original.source`, `incoming-page.source`, `workspace.json`, or hidden/internal job files.")
+print("Only chunk files, page-level merged outputs, controller reports, and `new-pages/*` are valid write targets.")
 print("Use the exact absolute paths below. Do not reinterpret them relative to the current working directory.\n")
 print("Job directory:")
 print(f"`{job_dir}`\n")

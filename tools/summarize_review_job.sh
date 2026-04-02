@@ -44,6 +44,10 @@ from pathlib import Path
 
 repo_dir = Path(sys.argv[1])
 job_id = sys.argv[2]
+sys.path.insert(0, str(repo_dir / "scripts"))
+
+from lib_review_job import load_private_job_state, validate_job_outputs
+
 job_dir = repo_dir / "work" / "review-jobs" / job_id
 job_path = job_dir / "job.json"
 loop_path = job_dir / "loop-status.json"
@@ -51,9 +55,10 @@ loop_path = job_dir / "loop-status.json"
 if not job_path.exists():
     raise SystemExit(f"Job file not found: {job_path}")
 
-job = json.loads(job_path.read_text(encoding="utf-8"))
+job = load_private_job_state(job_dir)
 loop = json.loads(loop_path.read_text(encoding="utf-8")) if loop_path.exists() else {}
 job_metadata = job.get("job_metadata") or {}
+validation = validate_job_outputs(job_dir, job)
 
 print(f"job_id: {job.get('job_id')}")
 print(f"job_status: {job.get('status')}")
@@ -62,6 +67,11 @@ print(f"decision: {loop.get('decision')}")
 print(f"current_iteration: {job.get('current_iteration')}")
 print(f"request_mode: {job_metadata.get('request_mode')}")
 print(f"default_parent_id: {job_metadata.get('default_parent_id')}")
+print(f"strict_validation_ok: {validation.get('ok')}")
+if validation.get("errors"):
+    print("validation_errors:")
+    for item in validation["errors"]:
+        print(f"  - {item}")
 print()
 
 pages = job.get("pages", [])

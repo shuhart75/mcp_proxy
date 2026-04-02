@@ -68,10 +68,15 @@ import sys
 from pathlib import Path
 
 job_dir = Path(sys.argv[1])
+repo_dir = Path.cwd()
+sys.path.insert(0, str(repo_dir / "scripts"))
+
+from lib_review_job import load_private_job_state
+
 job_json = job_dir / "job.json"
 if not job_json.exists():
     raise SystemExit(0)
-payload = json.loads(job_json.read_text(encoding="utf-8"))
+payload = load_private_job_state(job_dir)
 for page in payload.get("pages", []):
     workspace_dir = Path(page["workspace_dir"])
     page_path = Path(page["page_path"])

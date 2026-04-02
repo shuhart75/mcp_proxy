@@ -16,7 +16,7 @@ from confluence_section_mcp.adapters import build_adapter
 from confluence_section_mcp.config import load_app_config
 from confluence_section_mcp.gigacode_settings import build_app_config_from_gigacode_settings
 from lib_confluence_workflow import prepare_workspace
-from lib_review_job import ReviewPageRecord, build_page_overview, initialize_review_job
+from lib_review_job import ReviewPageRecord, build_page_overview, initialize_review_job, private_job_dir, load_private_job_state, write_job_state
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,7 +52,9 @@ def main() -> int:
     task_text = args.task_text or Path(args.task_file).read_text(encoding="utf-8")
     job_dir = Path(args.workspace_root) / args.job_id
     pages_root = job_dir / "pages"
+    private_pages_root = private_job_dir(job_dir) / "pages"
     pages_root.mkdir(parents=True, exist_ok=True)
+    private_pages_root.mkdir(parents=True, exist_ok=True)
     log_path = Path(args.log_file) if args.log_file else job_dir / "bootstrap.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -93,7 +95,7 @@ def main() -> int:
             with operation_timeout(timeout_ms, f"fetch page {page_id}"):
                 snapshot = adapter.get_page(page_id)
             log(f"Fetched page {page_id}: title={snapshot.title!r}, body_format={snapshot.body_format}, version={snapshot.version}")
-            incoming_dir = pages_root / page_id
+            incoming_dir = private_pages_root / page_id
             incoming_dir.mkdir(parents=True, exist_ok=True)
             source_path = incoming_dir / "incoming-page.source"
             source_path.write_text(snapshot.body, encoding="utf-8")
@@ -105,6 +107,7 @@ def main() -> int:
                 max_chars=args.max_chars,
                 page_filename="page.source",
                 original_filename="page.original.source",
+                private_workspace_root=private_pages_root,
             )
             meta_path = Path(summary.workspace_dir) / "page.meta.json"
             meta_path.write_text(
@@ -152,7 +155,9 @@ def main() -> int:
 
     job_state = initialize_review_job(job_dir=job_dir, task_text=task_text, pages=page_records, max_chars=args.max_chars)
     job_state["bootstrap_log"] = str(log_path)
-    (job_dir / "job.json").write_text(json.dumps(job_state, ensure_ascii=False, indent=2), encoding="utf-8")
+    private_state = load_private_job_state(job_dir)
+    private_state["bootstrap_log"] = str(log_path)
+    write_job_state(job_dir, private_state)
     log(f"Bootstrap complete: {job_dir}")
     print(json.dumps(job_state, ensure_ascii=False, indent=2))
     return 0

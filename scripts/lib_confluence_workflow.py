@@ -30,13 +30,16 @@ def prepare_workspace(
     max_chars: int = 12000,
     page_filename: str = "page.md",
     original_filename: str = "page.original.md",
+    private_workspace_root: Path | None = None,
 ) -> WorkspaceSummary:
     source = page_file.read_text(encoding="utf-8")
     workspace_dir = workspace_root / page_id
     workspace_dir.mkdir(parents=True, exist_ok=True)
+    private_workspace_dir = (private_workspace_root / page_id) if private_workspace_root else workspace_dir
+    private_workspace_dir.mkdir(parents=True, exist_ok=True)
 
-    page_target = workspace_dir / page_filename
-    backup_target = workspace_dir / original_filename
+    page_target = private_workspace_dir / page_filename
+    backup_target = private_workspace_dir / original_filename
     task_path = workspace_dir / "task.md"
     shutil.copyfile(page_file, page_target)
     shutil.copyfile(page_file, backup_target)
@@ -61,12 +64,12 @@ def prepare_workspace(
             {
                 "workspace_dir": summary.workspace_dir,
                 "page_id": summary.page_id,
-                "page_path": summary.page_path,
                 "task_path": summary.task_path,
                 "manifest_path": summary.manifest_path,
                 "strategy": summary.strategy,
                 "chunk_count": summary.chunk_count,
                 "should_chunk": summary.should_chunk,
+                "source_path_hidden": private_workspace_root is not None,
             },
             ensure_ascii=False,
             indent=2,
