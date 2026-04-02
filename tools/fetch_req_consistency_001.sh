@@ -6,6 +6,8 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${REPO_DIR}"
 
+export PYTHONPATH="${REPO_DIR}/src:${REPO_DIR}/scripts${PYTHONPATH:+:${PYTHONPATH}}"
+
 python3 scripts/fetch_confluence_pages.py \
   --config "${HOME}/.gigacode/confluence-orchestrator/confluence-rest.config.json" \
   --page-id 18028730639 \
