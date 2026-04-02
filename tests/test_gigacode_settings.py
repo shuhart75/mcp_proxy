@@ -35,10 +35,11 @@ class GigaCodeSettingsTests(unittest.TestCase):
         self.assertEqual(config.mode, "mcp")
         assert config.upstream_mcp is not None
         self.assertEqual(config.upstream_mcp.command, "python3")
-        self.assertEqual(config.upstream_mcp.args, [str(fake_server)])
+        self.assertEqual(config.upstream_mcp.args, ["-u", str(fake_server)])
         self.assertEqual(config.upstream_mcp.page_id_arg, "page_id")
         self.assertEqual(config.upstream_mcp.body_arg, "content")
         self.assertEqual(config.upstream_mcp.env["CONFLUENCE_SSL_VERIFY"], "false")
+        self.assertEqual(config.upstream_mcp.env["PYTHONUNBUFFERED"], "1")
         self.assertTrue(config.upstream_mcp.get_page_extra_args["convert_to_markdown"])
 
     def test_built_config_can_fetch_from_upstream(self) -> None:

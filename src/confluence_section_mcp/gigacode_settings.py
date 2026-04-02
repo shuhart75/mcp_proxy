@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from pathlib import PurePath
 from typing import Any
 
 from .config import AppConfig
@@ -59,6 +60,10 @@ def build_app_config_from_gigacode_settings(settings_path: str | None = None, *,
     if not isinstance(raw_env, dict):
         raise ValueError(f"mcpServers.{server_name}.env must be an object")
     env_map = {str(key): _stringify_env_value(value) for key, value in raw_env.items()}
+    env_map.setdefault("PYTHONUNBUFFERED", "1")
+
+    if _looks_like_python_command(command):
+        args = _inject_unbuffered_flag(args)
 
     payload = {
         "mode": "mcp",
@@ -94,3 +99,16 @@ def _stringify_env_value(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
+
+
+def _looks_like_python_command(command: str) -> bool:
+    name = PurePath(command).name.lower()
+    return name.startswith("python")
+
+
+def _inject_unbuffered_flag(args: list[str]) -> list[str]:
+    if not args:
+        return ["-u"]
+    if args[0] == "-u":
+        return args
+    return ["-u", *args]
