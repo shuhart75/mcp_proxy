@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from lib_review_job import ReviewPageRecord, advance_review_loop, build_page_overview, initialize_review_job, load_job_state, load_private_job_state, private_job_dir
+from lib_review_job import ReviewPageRecord, advance_review_loop, build_page_overview, initialize_review_job, load_job_state, load_private_job_state, private_job_dir, validate_job_outputs
 
 
 class ReviewJobTests(unittest.TestCase):
@@ -110,6 +110,25 @@ class ReviewJobTests(unittest.TestCase):
             self.assertEqual(result["decision"], "review-only")
             self.assertEqual(result["recommended_next_action"], "none")
 
+    def test_advance_review_loop_rejects_old_iteration_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            job_dir = Path(tmpdir) / "job-1"
+            initialize_review_job(
+                job_dir=job_dir,
+                task_text="Check consistency.",
+                pages=[],
+                max_chars=12000,
+            )
+            payload = load_private_job_state(job_dir)
+            payload["current_iteration"] = 2
+            from lib_review_job import write_job_state
+            write_job_state(job_dir, payload)
+            report_path = job_dir / "reports" / "iteration-001" / "controller-report.md"
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text("Decision: approved\nRecommended next action: none\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                advance_review_loop(job_dir=job_dir, report_path=report_path)
+
     def test_initialize_review_job_persists_job_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             job_dir = Path(tmpdir) / "job-1"
@@ -151,6 +170,20 @@ class ReviewJobTests(unittest.TestCase):
             self.assertNotIn("page_path", public_state["pages"][0])
             self.assertEqual(private_state["pages"][0]["page_path"], "/tmp/job-1-internal/pages/1/page.source")
             self.assertTrue((private_job_dir(job_dir) / "job.json").exists())
+
+    def test_validate_job_outputs_rejects_helper_scripts_inside_job(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            job_dir = Path(tmpdir) / "job-1"
+            initialize_review_job(
+                job_dir=job_dir,
+                task_text="Check consistency.",
+                pages=[],
+                max_chars=12000,
+            )
+            (job_dir / "merge_pages.py").write_text("print('bad')\n", encoding="utf-8")
+            result = validate_job_outputs(job_dir)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("Unexpected helper script" in item for item in result["errors"]))
 
 
 if __name__ == "__main__":

@@ -134,6 +134,7 @@ def load_private_job_state(job_dir: Path) -> dict[str, Any]:
 
 def advance_review_loop(*, job_dir: Path, report_path: Path) -> dict[str, Any]:
     payload = load_private_job_state(job_dir)
+    _ensure_report_matches_current_iteration(payload, report_path)
     report_text = report_path.read_text(encoding="utf-8")
     decision = _parse_prefixed_value(report_text, "Decision") or "unknown"
     next_action = _parse_prefixed_value(report_text, "Recommended next action")
@@ -236,6 +237,12 @@ def validate_job_outputs(job_dir: Path, payload: dict[str, Any] | None = None) -
     changed_pages: list[str] = []
     incomplete_new_pages: list[str] = []
     complete_new_pages: list[str] = []
+
+    for path in sorted(job_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        if path.suffix in {".py", ".sh", ".js", ".ts"}:
+            errors.append(f"Unexpected helper script inside review job: {path}")
 
     for page in payload.get("pages", []):
         if not isinstance(page, dict):
@@ -382,3 +389,16 @@ def _parse_prefixed_value(text: str, prefix: str) -> str | None:
                 continue
             return line
     return None
+
+
+def _ensure_report_matches_current_iteration(payload: dict[str, Any], report_path: Path) -> None:
+    current_iteration = int(payload.get("current_iteration", 1))
+    match = re.search(r"iteration-(\d{3})", str(report_path))
+    if not match:
+        return
+    report_iteration = int(match.group(1))
+    if report_iteration != current_iteration:
+        raise ValueError(
+            f"Report path iteration does not match current job iteration: "
+            f"expected iteration-{current_iteration:03d}, got iteration-{report_iteration:03d}"
+        )

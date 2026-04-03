@@ -3,7 +3,7 @@
 Mode: review-and-fix.
 Do not publish automatically.
 Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.
-Do not create subagents unless absolutely necessary.
+Do not create subagents.
 This job is already bootstrapped from local files. Do not fetch pages again.
 Prefer an absolute job path. If a helper script generated a prompt with absolute paths, use that generated prompt instead of interpreting relative paths from the current working directory.
 

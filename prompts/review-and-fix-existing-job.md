@@ -3,7 +3,7 @@
 Mode: review-and-fix.
 Do not publish automatically.
 Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.
-Do not create subagents unless absolutely necessary.
+Do not create subagents.
 
 Job directory:
 `work/review-jobs/req-consistency-001`

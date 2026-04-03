@@ -74,8 +74,11 @@ report_path = loop.get("next_report_path") or job.get("next_report_path")
 if not report_path:
     iteration = int(job.get("current_iteration", 1))
     report_path = str(job_dir / "reports" / f"iteration-{iteration:03d}" / "controller-report.md")
+report_path = str((repo_dir / report_path).resolve()) if not Path(report_path).is_absolute() else str(Path(report_path).resolve())
 
 advance_script = repo_dir / "scripts" / "advance_review_loop.py"
+materialize_script = repo_dir / "scripts" / "materialize_review_job_outputs.py"
+validate_script = repo_dir / "scripts" / "validate_review_job_outputs.py"
 finish_script = repo_dir / "tools" / "finish_confluence_job.sh"
 new_pages_dir = job_dir / "new-pages"
 default_parent_id = job_metadata.get("default_parent_id")
@@ -86,9 +89,10 @@ if mode == "analyze":
 else:
     print("Do not publish automatically.")
 print("Do not invoke any Confluence skill or wrapper prompt. Follow this instruction set directly.")
-print("Do not create subagents unless absolutely necessary.")
+print("Do not create subagents. Delegation is forbidden for this workflow.")
 print("This job is already bootstrapped from local files. Do not fetch pages again.")
 print("Do not inspect or edit full-source page files such as `page.source`, `page.original.source`, `incoming-page.source`, `workspace.json`, or hidden/internal job files.")
+print("Do not create helper scripts, notebooks, or ad-hoc tools inside the review job. Use only the provided commands below.")
 print("Only chunk files, page-level merged outputs, controller reports, and `new-pages/*` are valid write targets.")
 print("Use the exact absolute paths below. Do not reinterpret them relative to the current working directory.\n")
 print("Job directory:")
@@ -119,9 +123,9 @@ else:
     if mode in {"update", "mixed"}:
         print(f"{step}. Edit only the existing-page chunks that require changes.")
         step += 1
-        print(f"{step}. For every changed existing page, create page-level outputs:")
-        print(f"   - `{job_dir}/pages/<page-id>/merged.md`")
-        print(f"   - `{job_dir}/pages/<page-id>/merged.diff`")
+        print(f"{step}. After editing chunks, create page-level outputs by running:")
+        print(f"   - `python3 {materialize_script} --job-dir {job_dir}`")
+        print("   This command creates `merged.md` and `merged.diff` for every changed existing page.")
         step += 1
     if mode in {"create", "mixed"}:
         print(f"{step}. If the task requires new pages, create one directory per new page under:")
@@ -136,9 +140,10 @@ else:
         if default_parent_id:
             print(f"   Default parent_id for new pages in this job: `{default_parent_id}`")
         step += 1
-    print(f"{step}. Do not claim readiness for publish unless changed existing pages have merged outputs and new pages have both `page.md` and `page.meta.json`.")
+    print(f"{step}. Validate outputs before writing the report by running:")
+    print(f"   - `python3 {validate_script} --job-dir {job_dir}`")
     step += 1
-    print(f"{step}. Write the controller report to:")
+    print(f"{step}. Write the controller report to this exact path and overwrite its previous contents for the current iteration:")
     print(f"   - `{report_path}`")
     step += 1
     print(f"{step}. The controller report must contain these exact lines as standalone lines:")
@@ -146,6 +151,7 @@ else:
     print("   - `Decision: review-only` if no edits were needed")
     print("   - `Decision: needs-edits` if another pass is needed")
     print("   - `Recommended next action: <text>`")
+    print("   Do not copy forward an old `needs-edits` report after making changes.")
     step += 1
     print(f"{step}. Run:")
     print(f"   - `python3 {advance_script} --job-dir {job_dir} --report {report_path}`")
