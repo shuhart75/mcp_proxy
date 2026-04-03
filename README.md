@@ -6,6 +6,7 @@ This repository now contains two tracks:
 2. A new stage-1 GigaCode extension workflow that avoids custom MCP transport and builds on an already working Atlassian MCP server.
 
 The recommended path for large-page review and editing is now the direct API design in [`docs/direct-api-v2.md`](./docs/direct-api-v2.md).
+For a simple team-facing operator guide, use [`docs/team-confluence-workflow.md`](./docs/team-confluence-workflow.md).
 The extension workflow documented in [`docs/stage1-extension.md`](./docs/stage1-extension.md) remains available as a legacy path.
 For step-by-step macOS installation commands, use [`docs/stage1-macos-setup.md`](./docs/stage1-macos-setup.md).
 The previous extension-oriented stage-2 flow is documented in [`docs/stage2-runbook.md`](./docs/stage2-runbook.md).
